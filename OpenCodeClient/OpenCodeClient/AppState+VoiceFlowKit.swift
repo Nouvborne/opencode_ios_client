@@ -2,6 +2,10 @@ import Foundation
 import os
 import VoiceFlowKit
 
+extension VoiceFlowRecordingStrategy {
+    var usesRealtimeTransport: Bool { self == .openAIRealtime }
+}
+
 /// VoiceFlowKit speech recognition integration. Wraps the kit's
 /// `VoiceFlowClient` for OpenCode's three speech entry points:
 /// one-shot transcription of an audio file, real-time WS sessions for
@@ -36,13 +40,21 @@ extension AppState {
         return VoiceFlowClient(config: config)
     }
 
-    func transcribeAudio(audioFileURL: URL, onPartialTranscript: (@Sendable (String) -> Void)? = nil) async throws -> String {
+    func transcribeAudio(
+        audioFileURL: URL,
+        strategy: VoiceFlowRecordingStrategy = .openAIRealtime,
+        onPartialTranscript: (@Sendable (String) -> Void)? = nil
+    ) async throws -> String {
         let start = ProcessInfo.processInfo.systemUptime
         let fileName = audioFileURL.lastPathComponent.isEmpty ? "audio.m4a" : audioFileURL.lastPathComponent
         Self.logger.notice("[SpeechProfile] appState.transcribe begin file=\(fileName, privacy: .public)")
         do {
             let client = try makeVoiceFlowClient()
-            let result = try await client.transcribe(audioFile: audioFileURL, onPartialTranscript: onPartialTranscript)
+            let result = try await client.transcribe(
+                audioFile: audioFileURL,
+                strategy: strategy,
+                onPartialTranscript: onPartialTranscript
+            )
             let elapsedMs = max(0, Int((ProcessInfo.processInfo.systemUptime - start) * 1000))
             Self.logger.notice("[SpeechProfile] appState.transcribe done ms=\(elapsedMs, privacy: .public) textChars=\(result.text.count, privacy: .public) requestID=\(result.requestID, privacy: .public)")
             return result.text

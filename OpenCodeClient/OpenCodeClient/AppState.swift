@@ -166,6 +166,7 @@ final class AppState {
     static let aiBuilderTokenKeychainKey = "aiBuilderToken"
     static let aiBuilderCustomPromptKey = "aiBuilderCustomPrompt"
     static let aiBuilderTerminologyKey = "aiBuilderTerminology"
+    static let aiBuilderRecordingStrategyKey = "aiBuilderRecordingStrategy"
     static let aiBuilderLastOKSignatureKey = "aiBuilderLastOKSignature"
     static let aiBuilderLastOKTestedAtKey = "aiBuilderLastOKTestedAt"
     static let draftInputsBySessionKey = "draftInputsBySession"
@@ -225,6 +226,9 @@ final class AppState {
         _aiBuilderToken = KeychainHelper.load(forKey: Self.aiBuilderTokenKeychainKey) ?? ""
         _aiBuilderCustomPrompt = UserDefaults.standard.string(forKey: Self.aiBuilderCustomPromptKey) ?? Self.defaultAIBuilderCustomPrompt
         _aiBuilderTerminology = UserDefaults.standard.string(forKey: Self.aiBuilderTerminologyKey) ?? Self.defaultAIBuilderTerminology
+        _aiBuilderRecordingStrategy = VoiceFlowRecordingStrategy(
+            rawValue: UserDefaults.standard.string(forKey: Self.aiBuilderRecordingStrategyKey) ?? ""
+        ) ?? .openAIRealtime
         _selectedProjectWorktree = UserDefaults.standard.string(forKey: Self.selectedProjectWorktreeKey)
         _customProjectPath = UserDefaults.standard.string(forKey: Self.customProjectPathKey) ?? ""
         _languagePreference = L10n.languagePreference
@@ -340,6 +344,15 @@ final class AppState {
         set {
             _aiBuilderTerminology = newValue
             UserDefaults.standard.set(newValue, forKey: Self.aiBuilderTerminologyKey)
+        }
+    }
+
+    var _aiBuilderRecordingStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
+    var aiBuilderRecordingStrategy: VoiceFlowRecordingStrategy {
+        get { _aiBuilderRecordingStrategy }
+        set {
+            _aiBuilderRecordingStrategy = newValue
+            UserDefaults.standard.set(newValue.rawValue, forKey: Self.aiBuilderRecordingStrategyKey)
         }
     }
 

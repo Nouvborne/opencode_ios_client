@@ -1381,6 +1381,23 @@ struct SpeechRecognitionDefaultsTests {
         UserDefaults.standard.removeObject(forKey: "aiBuilderCustomPrompt")
         UserDefaults.standard.removeObject(forKey: "aiBuilderTerminology")
     }
+
+    @Test @MainActor func recordingStrategyPersistsAndDefaultsToRealtime() async {
+        UserDefaults.standard.removeObject(forKey: AppState.aiBuilderRecordingStrategyKey)
+        let defaultState = AppState()
+        #expect(defaultState.aiBuilderRecordingStrategy == .openAIRealtime)
+
+        defaultState.aiBuilderRecordingStrategy = .grokBatch
+        let restoredState = AppState()
+        #expect(restoredState.aiBuilderRecordingStrategy == .grokBatch)
+
+        UserDefaults.standard.removeObject(forKey: AppState.aiBuilderRecordingStrategyKey)
+    }
+
+    @Test func onlyOpenAIRecordingUsesRealtimeTransport() {
+        #expect(VoiceFlowRecordingStrategy.openAIRealtime.usesRealtimeTransport)
+        #expect(!VoiceFlowRecordingStrategy.grokBatch.usesRealtimeTransport)
+    }
 }
 
 struct ChatComposerSpeechTests {

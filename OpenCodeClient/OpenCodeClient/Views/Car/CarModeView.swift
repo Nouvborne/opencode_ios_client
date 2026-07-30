@@ -6,6 +6,10 @@ struct CarModeView: View {
     @Bindable var state: AppState
     @State private var microphone = VoiceFlowMicrophone()
     @State private var speechSession: VoiceFlowSession?
+    @State private var recordingStartID: UUID?
+    @State private var activeRecordingStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
+    @State private var pendingRecordingURL: URL?
+    @State private var pendingRecordingStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
     @State private var heartbeatTask: Task<Void, Never>?
     @State private var audioLevelTask: Task<Void, Never>?
     @State private var audioLevel: Float = 0
@@ -238,9 +242,14 @@ struct CarModeView: View {
             await stopRecordingAndSubmit()
         case .finalizing, .waitingReply, .speaking:
             speechFinalizationID = nil
+            discardPendingRecording()
             await state.cancelCarInteraction()
         case .failed:
-            await state.submitCarTurn(state.carLastTranscript)
+            if pendingRecordingURL != nil {
+                await retryPendingRecording()
+            } else {
+                await state.submitCarTurn(state.carLastTranscript)
+            }
         case .idle, .awaitingConfirmation:
             await startRecording()
         }
@@ -259,41 +268,116 @@ struct CarModeView: View {
             state.carPhase = .failed
             return
         }
+        let startID = UUID()
+        recordingStartID = startID
+        isStartingRecording = true
         guard await ChatTabView.requestMicrophonePermissionForRecording() else {
+            guard recordingStartID == startID else { return }
+            recordingStartID = nil
+            isStartingRecording = false
             state.carError = L10n.t(.chatMicrophoneDenied)
             state.carPhase = .failed
             return
         }
 
-        isStartingRecording = true
+        guard recordingStartID == startID else { return }
         speechFinalizationID = nil
+        discardPendingRecording()
         state.carSpeechOutput.stop()
-        microphone = VoiceFlowMicrophone()
+        let startingMicrophone = VoiceFlowMicrophone()
+        microphone = startingMicrophone
+        var startedSession: VoiceFlowSession?
         do {
-            let session = try await state.startRealtimeSpeechSession()
-            speechSession = session
-            try await microphone.start { chunk in
-                Task { await session.sendAudioChunk(chunk) }
+            let strategy = state.aiBuilderRecordingStrategy
+            activeRecordingStrategy = strategy
+            if strategy.usesRealtimeTransport {
+                let session = try await state.startRealtimeSpeechSession()
+                startedSession = session
+                guard recordingStartID == startID else {
+                    await terminate(session)
+                    return
+                }
+                speechSession = session
+                try await startingMicrophone.start(strategy: strategy) { chunk in
+                    Task { await session.sendAudioChunk(chunk) }
+                }
+            } else {
+                speechSession = nil
+                try await startingMicrophone.start(strategy: strategy)
+            }
+            guard recordingStartID == startID else {
+                if let audioURL = try? await startingMicrophone.stop() {
+                    try? FileManager.default.removeItem(at: audioURL)
+                }
+                startingMicrophone.discard()
+                if let startedSession {
+                    await terminate(startedSession)
+                    if speechSession === startedSession {
+                        speechSession = nil
+                    }
+                }
+                return
+            }
+            if let startedSession {
+                startHeartbeat(for: startedSession)
             }
             state.carError = nil
             state.carPhase = .recording
-            startHeartbeat(for: session)
             startAudioLevelConsumer()
         } catch {
-            speechSession = nil
+            if let audioURL = try? await startingMicrophone.stop() {
+                try? FileManager.default.removeItem(at: audioURL)
+            }
+            startingMicrophone.discard()
+            if let startedSession {
+                await terminate(startedSession)
+                if speechSession === startedSession {
+                    speechSession = nil
+                }
+            }
+            guard recordingStartID == startID else { return }
             state.carError = error.localizedDescription
             state.carPhase = .failed
         }
-        isStartingRecording = false
+        if recordingStartID == startID {
+            recordingStartID = nil
+            isStartingRecording = false
+        }
     }
 
     private func stopRecordingAndSubmit() async {
-        stopHeartbeat()
-        stopAudioLevelConsumer()
-        _ = try? await microphone.stop()
-        state.carPhase = .finalizing
         let finalizationID = UUID()
         speechFinalizationID = finalizationID
+        let stoppingMicrophone = microphone
+        stopHeartbeat()
+        stopAudioLevelConsumer()
+        let audioURL = try? await stoppingMicrophone.stop()
+        stoppingMicrophone.discard()
+        guard speechFinalizationID == finalizationID else {
+            if let audioURL {
+                try? FileManager.default.removeItem(at: audioURL)
+            }
+            return
+        }
+        state.carPhase = .finalizing
+        let strategy = activeRecordingStrategy
+
+        if !strategy.usesRealtimeTransport {
+            guard let audioURL else {
+                speechFinalizationID = nil
+                state.carError = L10n.t(.carTranscriptionFailed)
+                state.carPhase = .failed
+                return
+            }
+            pendingRecordingURL = audioURL
+            pendingRecordingStrategy = strategy
+            await transcribePendingRecording(finalizationID: finalizationID)
+            return
+        }
+
+        if let audioURL {
+            try? FileManager.default.removeItem(at: audioURL)
+        }
         guard let session = speechSession else {
             speechFinalizationID = nil
             state.carError = L10n.t(.carTranscriptionFailed)
@@ -309,6 +393,7 @@ struct CarModeView: View {
             guard !cleaned.isEmpty else { throw CarModeError.invalidResponse }
             guard speechFinalizationID == finalizationID else { return }
             speechFinalizationID = nil
+            discardPendingRecording()
             await state.submitCarTurn(cleaned)
         } catch {
             await terminate(session)
@@ -320,15 +405,58 @@ struct CarModeView: View {
     }
 
     private func stopForBackground() async {
+        recordingStartID = nil
+        isStartingRecording = false
         speechFinalizationID = nil
         stopHeartbeat()
         stopAudioLevelConsumer()
-        _ = try? await microphone.stop()
+        if let audioURL = try? await microphone.stop() {
+            try? FileManager.default.removeItem(at: audioURL)
+        }
+        microphone.discard()
         if let session = speechSession {
             speechSession = nil
             await terminate(session)
         }
         await state.cancelCarInteraction()
+        discardPendingRecording()
+    }
+
+    private func retryPendingRecording() async {
+        guard pendingRecordingURL != nil else { return }
+        state.carPhase = .finalizing
+        let finalizationID = UUID()
+        speechFinalizationID = finalizationID
+        await transcribePendingRecording(finalizationID: finalizationID)
+    }
+
+    private func transcribePendingRecording(finalizationID: UUID) async {
+        guard let audioURL = pendingRecordingURL else { return }
+        do {
+            let transcript = try await state.transcribeAudio(
+                audioFileURL: audioURL,
+                strategy: pendingRecordingStrategy
+            )
+            let cleaned = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !cleaned.isEmpty else { throw CarModeError.invalidResponse }
+            guard speechFinalizationID == finalizationID else { return }
+            speechFinalizationID = nil
+            discardPendingRecording()
+            await state.submitCarTurn(cleaned)
+        } catch {
+            guard speechFinalizationID == finalizationID else { return }
+            speechFinalizationID = nil
+            state.carError = error.localizedDescription
+            state.carPhase = .failed
+        }
+    }
+
+    private func discardPendingRecording() {
+        if let pendingRecordingURL {
+            try? FileManager.default.removeItem(at: pendingRecordingURL)
+        }
+        pendingRecordingURL = nil
+        pendingRecordingStrategy = .openAIRealtime
     }
 
     private func terminate(_ session: VoiceFlowSession) async {
