@@ -101,6 +101,9 @@ enum L10n {
         case settingsAppearance
         case settingsTheme
         case settingsSpeechRecognition
+        case settingsRecordingStrategy
+        case settingsOpenAIRealtime
+        case settingsGrokBatch
         case settingsAiBuilderBaseURL
         case settingsAiBuilderToken
         case settingsCustomPrompt
@@ -552,6 +555,9 @@ enum L10n {
         Key.settingsAppearance.rawValue: "Appearance",
         Key.settingsTheme.rawValue: "Theme",
         Key.settingsSpeechRecognition.rawValue: "Speech Recognition",
+        Key.settingsRecordingStrategy.rawValue: "Recording Strategy",
+        Key.settingsOpenAIRealtime.rawValue: "OpenAI Realtime",
+        Key.settingsGrokBatch.rawValue: "Grok Batch",
         Key.settingsAiBuilderBaseURL.rawValue: "AI Builder Base URL",
         Key.settingsAiBuilderToken.rawValue: "AI Builder Token",
         Key.settingsCustomPrompt.rawValue: "Custom Prompt",
@@ -1002,6 +1008,9 @@ enum L10n {
         Key.settingsAppearance.rawValue: "外观",
         Key.settingsTheme.rawValue: "主题",
         Key.settingsSpeechRecognition.rawValue: "语音识别",
+        Key.settingsRecordingStrategy.rawValue: "录音策略",
+        Key.settingsOpenAIRealtime.rawValue: "OpenAI 实时",
+        Key.settingsGrokBatch.rawValue: "Grok 批量",
         Key.settingsAiBuilderBaseURL.rawValue: "AI Builder 服务地址",
         Key.settingsAiBuilderToken.rawValue: "AI Builder 访问令牌",
         Key.settingsCustomPrompt.rawValue: "自定义提示词",

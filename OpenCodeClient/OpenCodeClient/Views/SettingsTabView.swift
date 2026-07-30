@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import VoiceFlowKit
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -170,6 +171,13 @@ struct SettingsTabView: View {
                 clientCapabilitiesSection
 
                 Section(L10n.t(.settingsSpeechRecognition)) {
+                    Picker(L10n.t(.settingsRecordingStrategy), selection: $state.aiBuilderRecordingStrategy) {
+                        Text(L10n.t(.settingsOpenAIRealtime)).tag(VoiceFlowRecordingStrategy.openAIRealtime)
+                        Text(L10n.t(.settingsGrokBatch)).tag(VoiceFlowRecordingStrategy.grokBatch)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("settings-recording-strategy")
+
                     TextField(L10n.t(.settingsAiBuilderBaseURL), text: $state.aiBuilderBaseURL)
                         .textContentType(.URL)
                         .autocapitalization(.none)
@@ -177,8 +185,10 @@ struct SettingsTabView: View {
                     SecureField(L10n.t(.settingsAiBuilderToken), text: $state.aiBuilderToken)
                         .textContentType(.password)
 
-                    TextField(L10n.t(.settingsCustomPrompt), text: $state.aiBuilderCustomPrompt, axis: .vertical)
-                        .lineLimit(3...6)
+                    if state.aiBuilderRecordingStrategy == .openAIRealtime {
+                        TextField(L10n.t(.settingsCustomPrompt), text: $state.aiBuilderCustomPrompt, axis: .vertical)
+                            .lineLimit(3...6)
+                    }
 
                     TextField(L10n.t(.settingsTerminology), text: $state.aiBuilderTerminology)
                         .textContentType(.none)

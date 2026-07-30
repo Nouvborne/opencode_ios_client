@@ -63,11 +63,17 @@ struct ChatTabView: View {
     @State private var renameText = ""
     @State var microphone = VoiceFlowMicrophone()
     @State var speechSession: VoiceFlowSession?
+    @State var speechStartID: UUID?
+    @State var activeSpeechStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
+    @State var speechFinalizationID: UUID?
+    @State var speechRetryID: UUID?
     @State var speechHeartbeatTask: Task<Void, Never>?
     @State var speechEventTask: Task<Void, Never>?
     @State var recordingInputPrefix = ""
     @State var preservedSpeechInputPrefix = ""
     @State var preservedSpeechAudio: VoiceFlowPreservedAudio?
+    @State var preservedSpeechFileURL: URL?
+    @State var preservedSpeechStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
     @State var isRecording = false
     @State var isStartingRecording = false
     @State var isTranscribing = false
@@ -102,7 +108,7 @@ struct ChatTabView: View {
     }
 
     private var hasPreservedSpeechAudioForUI: Bool {
-        preservedSpeechAudio != nil || Self.hasUITestF3RetryFixture
+        preservedSpeechAudio != nil || preservedSpeechFileURL != nil || Self.hasUITestF3RetryFixture
     }
 
     private var composerPlaceholderText: String {
@@ -866,6 +872,9 @@ struct ChatTabView: View {
             }
             .onChange(of: scenePhase) { _, newPhase in
                 guard newPhase == .background else { return }
+                Task { await stopSpeechForBackground() }
+            }
+            .onDisappear {
                 Task { await stopSpeechForBackground() }
             }
         }

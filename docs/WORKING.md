@@ -4,10 +4,23 @@
 
 ## 当前状态
 
-- **最后更新**：2026-07-24
-- **分支**：`feat/message-text-selection`
-- **编译/测试**：iPhone 16 / iOS 18.4 build 与全量 test suite 通过；36 个 UI tests 中 4 个 opt-in tests 按预期 skip
-- **Phase**：`opencode://session/<id>` cold/warm launch 与 Chat Markdown navigation implemented
+- **最后更新**：2026-07-30
+- **分支**：`feat/dual-recording-strategies`
+- **编译/测试**：iPhone 16 build 通过；OpenCodeClientTests 中 speech/strategy 相关测试通过；已知无关失败：`LayoutConstantsTests.splitViewFractions`、`CarModeFlowTests.carSessionContextSeparatesHostsAndWorkspaces`
+- **Phase**：OpenAI Realtime / Grok Batch 双录音策略 + VoiceFlowKit exact `0.3.0`
+
+### 2026-07-30 — Pin VoiceFlowKit 0.3.0
+
+- SPM 依赖从 bare revision 改为 exact SemVer `0.3.0`（`Package.resolved` 对应 merge commit `71b9fe6`）。
+- iPhone 16 simulator build 通过；`SpeechRecognitionDefaultsTests` / `VoiceFlowKitIntegrationTests` / chat speech tests 通过。
+
+### 2026-07-29 — OpenAI Realtime / Grok Batch 双录音策略
+
+- VoiceFlowKit pin 初值为 `4a04d562965fe041b552570759ef6e419ab3b2d6`；后续改为 exact `0.3.0`。Settings 持久化 `OpenAI Realtime` / `Grok Batch`，Grok 模式隐藏 OpenAI-only prompt 但保留其值。
+- Chat 与 Car 在 Start 时 snapshot strategy。OpenAI 维持 realtime session、PCM stream、heartbeat 与 recovery；Grok 只启动 AAC-LC M4A 本地录音，录音期不创建 ticket、WebSocket 或 heartbeat，Stop 后单次上传。
+- Chat preserved-audio 与 Car failed-state retry 都保存录音产生时的 strategy；录音后修改 Settings 不会重新解释旧文件。离开活跃录音页面、进入后台或取消 finalization 时会使 in-flight Start/finalization/retry generation 失效，阻止延迟 permission/session/microphone 或 transcript callback 恢复隐藏录音和写回旧结果，并清理临时文件与 realtime session。
+- VoiceFlowKit 同步修复 AAC/WAV finalize error 的 writer、buffer、临时文件与 audio session cleanup；package tests 12 个通过。
+- 验证：iPhone 16 / iOS 18.4 build 通过；新增 strategy persistence/transport contract 与 VoiceFlowKit integration 共 6 个定向测试通过；Tool Cards UI 隔离复跑通过。全量 suite 的 voice 相关测试通过，但仍报告既有 `LayoutConstantsTests.splitViewFractions` 精确 `CGFloat` 比较失败；同轮 Tool Cards fixture 首跑失败、隔离复跑通过。
 
 ### 2026-07-24 — Chat 跨 Markdown block 文本选择
 
