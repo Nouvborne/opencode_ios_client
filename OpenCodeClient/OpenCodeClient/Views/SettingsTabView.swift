@@ -183,12 +183,9 @@ struct SettingsTabView: View {
                         Button {
                             showStrategyHelp = true
                         } label: {
-                            Image(systemName: "info.circle.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(DesignColors.Semantic.info)
-                                .clipShape(Circle())
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 18))
+                                .foregroundStyle(DesignColors.Semantic.info)
                         }
                         .buttonStyle(.plain)
 
