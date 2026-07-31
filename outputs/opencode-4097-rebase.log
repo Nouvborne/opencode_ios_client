@@ -1,0 +1,74 @@
+timestamp=2026-06-22T01:29:12.808Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.config/opencode/config.json
+timestamp=2026-06-22T01:29:12.811Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.config/opencode/opencode.json
+timestamp=2026-06-22T01:29:12.828Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.config/opencode/opencode.jsonc
+opencode server listening on http://127.0.0.1:4097
+timestamp=2026-06-22T01:29:59.610Z level=INFO run=2ba66571 message="creating instance" directory=/Users/grapeot/co/knowledge_working/adhoc_jobs/opencode_ios_client
+timestamp=2026-06-22T01:29:59.610Z level=INFO run=2ba66571 message=fromDirectory directory=/Users/grapeot/co/knowledge_working/adhoc_jobs/opencode_ios_client
+timestamp=2026-06-22T01:29:59.684Z level=INFO run=2ba66571 message=bootstrapping directory=/Users/grapeot/co/knowledge_working/adhoc_jobs/opencode_ios_client
+timestamp=2026-06-22T01:29:59.688Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.config/opencode/config.json
+timestamp=2026-06-22T01:29:59.688Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.config/opencode/opencode.json
+timestamp=2026-06-22T01:29:59.689Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.config/opencode/opencode.jsonc
+timestamp=2026-06-22T01:29:59.697Z level=DEBUG run=2ba66571 message="loading config from /Users/grapeot/.opencode/opencode.json"
+timestamp=2026-06-22T01:29:59.697Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.opencode/opencode.json
+timestamp=2026-06-22T01:29:59.697Z level=DEBUG run=2ba66571 message="loading config from /Users/grapeot/.opencode/opencode.jsonc"
+timestamp=2026-06-22T01:29:59.697Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.opencode/opencode.jsonc
+timestamp=2026-06-22T01:29:59.718Z level=INFO run=2ba66571 message="all LSPs are disabled"
+timestamp=2026-06-22T01:29:59.718Z level=INFO run=2ba66571 message="all formatters are disabled"
+timestamp=2026-06-22T01:29:59.718Z level=INFO run=2ba66571 message=init
+timestamp=2026-06-22T01:29:59.724Z level=INFO run=2ba66571 message="global event connected"
+timestamp=2026-06-22T01:29:59.876Z level=INFO run=2ba66571 message=created id=ses_1130d22bbffeZOcvwcMta9CHF3 slug=glowing-panda version=local projectID=6dc26ba62881a96e141e722d19dc9317621a9de9 directory=/Users/grapeot/co/knowledge_working/adhoc_jobs/opencode_ios_client path="" workspaceID=undefined parentID=undefined title="New session - 2026-06-22T01:29:59.876Z" agent=undefined model=undefined metadata=undefined permission=undefined cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1782091799876 time.updated=1782091799876
+timestamp=2026-06-22T01:29:59.893Z level=INFO run=2ba66571 message="booting location services" directory=/Users/grapeot/co/knowledge_working/adhoc_jobs/opencode_ios_client workspaceID=undefined
+timestamp=2026-06-22T01:29:59.993Z level=INFO run=2ba66571 message="watcher backend" directory=/Users/grapeot/co/knowledge_working/adhoc_jobs/opencode_ios_client platform=darwin backend=fs-events
+timestamp=2026-06-22T01:30:00.119Z level=INFO run=2ba66571 message="project copy refresh started" projectID=6dc26ba62881a96e141e722d19dc9317621a9de9
+timestamp=2026-06-22T01:30:00.123Z level=INFO run=2ba66571 message=loop session.id=ses_1130d22bbffeZOcvwcMta9CHF3 step=0
+timestamp=2026-06-22T01:30:00.135Z level=INFO run=2ba66571 message=stream providerID=deepseek modelID=deepseek-v4-flash session.id=ses_1130d22bbffeZOcvwcMta9CHF3 small=true agent=title mode=primary
+timestamp=2026-06-22T01:30:00.149Z level=INFO run=2ba66571 message="llm runtime selected" llm.runtime=ai-sdk llm.provider=deepseek llm.model=deepseek-v4-flash
+timestamp=2026-06-22T01:30:00.207Z level=INFO run=2ba66571 message="project copy refresh done" projectID=6dc26ba62881a96e141e722d19dc9317621a9de9 updated=[] removed=[]
+timestamp=2026-06-22T01:30:00.328Z level=INFO run=2ba66571 message=initialized
+timestamp=2026-06-22T01:30:00.515Z level=INFO run=2ba66571 message=tracking hash=dd5c79da87e6ffea0647977bb747b1ccd448bbbd cwd=/Users/grapeot/co/knowledge_working/adhoc_jobs/opencode_ios_client git=/Users/grapeot/.local/share/opencode/snapshot/6dc26ba62881a96e141e722d19dc9317621a9de9/fed7187baa9826a9501818f07dfd55225a8e67e5
+timestamp=2026-06-22T01:30:00.518Z level=INFO run=2ba66571 message="shell tool using shell" shell=/bin/zsh
+timestamp=2026-06-22T01:30:01.597Z level=INFO run=2ba66571 message=init count=1
+timestamp=2026-06-22T01:30:01.606Z level=INFO run=2ba66571 message=process session.id=ses_1130d22bbffeZOcvwcMta9CHF3 messageID=msg_eecf2de43001QyjTyPzwehpz5N
+timestamp=2026-06-22T01:30:01.607Z level=INFO run=2ba66571 message=stream providerID=deepseek modelID=deepseek-v4-flash session.id=ses_1130d22bbffeZOcvwcMta9CHF3 small=false agent=build mode=primary
+timestamp=2026-06-22T01:30:01.607Z level=INFO run=2ba66571 message="llm runtime selected" llm.runtime=ai-sdk llm.provider=deepseek llm.model=deepseek-v4-flash
+timestamp=2026-06-22T01:30:02.935Z level=INFO run=2ba66571 message=tracking hash=418d7e1005fb73435dde6b88a9b57a6c9e7994c9 cwd=/Users/grapeot/co/knowledge_working/adhoc_jobs/opencode_ios_client git=/Users/grapeot/.local/share/opencode/snapshot/6dc26ba62881a96e141e722d19dc9317621a9de9/fed7187baa9826a9501818f07dfd55225a8e67e5
+timestamp=2026-06-22T01:30:03.062Z level=INFO run=2ba66571 message=loop session.id=ses_1130d22bbffeZOcvwcMta9CHF3 step=1
+timestamp=2026-06-22T01:30:03.062Z level=INFO run=2ba66571 message="exiting loop" session.id=ses_1130d22bbffeZOcvwcMta9CHF3
+timestamp=2026-06-22T01:30:03.069Z level=INFO run=2ba66571 message="removing share" sessionID=ses_1130d22bbffeZOcvwcMta9CHF3
+timestamp=2026-06-22T01:30:08.426Z level=ERROR run=2ba66571 message="failed to generate title" error="NotFoundError: Session not found: ses_1130d22bbffeZOcvwcMta9CHF3"
+timestamp=2026-06-22T01:30:23.352Z level=INFO run=2ba66571 message="creating instance" directory=/Users/grapeot/co/knowledge_working
+timestamp=2026-06-22T01:30:23.352Z level=INFO run=2ba66571 message=fromDirectory directory=/Users/grapeot/co/knowledge_working
+timestamp=2026-06-22T01:30:23.416Z level=INFO run=2ba66571 message=bootstrapping directory=/Users/grapeot/co/knowledge_working
+timestamp=2026-06-22T01:30:23.420Z level=DEBUG run=2ba66571 message="loading config from /Users/grapeot/co/knowledge_working/.opencode/opencode.json"
+timestamp=2026-06-22T01:30:23.420Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/co/knowledge_working/.opencode/opencode.json
+timestamp=2026-06-22T01:30:23.420Z level=DEBUG run=2ba66571 message="loading config from /Users/grapeot/co/knowledge_working/.opencode/opencode.jsonc"
+timestamp=2026-06-22T01:30:23.420Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/co/knowledge_working/.opencode/opencode.jsonc
+timestamp=2026-06-22T01:30:23.422Z level=DEBUG run=2ba66571 message="loading config from /Users/grapeot/.opencode/opencode.json"
+timestamp=2026-06-22T01:30:23.422Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.opencode/opencode.json
+timestamp=2026-06-22T01:30:23.422Z level=DEBUG run=2ba66571 message="loading config from /Users/grapeot/.opencode/opencode.jsonc"
+timestamp=2026-06-22T01:30:23.422Z level=INFO run=2ba66571 message=loading path=/Users/grapeot/.opencode/opencode.jsonc
+timestamp=2026-06-22T01:30:23.432Z level=INFO run=2ba66571 message="all LSPs are disabled"
+timestamp=2026-06-22T01:30:23.433Z level=INFO run=2ba66571 message="all formatters are disabled"
+timestamp=2026-06-22T01:30:23.433Z level=INFO run=2ba66571 message=init
+timestamp=2026-06-22T01:30:23.434Z level=INFO run=2ba66571 message="global event connected"
+timestamp=2026-06-22T01:30:23.435Z level=INFO run=2ba66571 message=created id=ses_1130cc6b4ffez4dZEXs4Pg7COo slug=jolly-cabin version=local projectID=4f8a16881b0d32c87ce9ba5f167d672c8b9a0e31 directory=/Users/grapeot/co/knowledge_working path="" workspaceID=undefined parentID=undefined title=ios-tier3-read-card agent=undefined model=undefined metadata=undefined permission=undefined cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1782091823435 time.updated=1782091823435
+timestamp=2026-06-22T01:30:23.452Z level=INFO run=2ba66571 message="booting location services" directory=/Users/grapeot/co/knowledge_working workspaceID=undefined
+timestamp=2026-06-22T01:30:23.536Z level=INFO run=2ba66571 message="watcher backend" directory=/Users/grapeot/co/knowledge_working platform=darwin backend=fs-events
+timestamp=2026-06-22T01:30:23.677Z level=INFO run=2ba66571 message="project copy refresh started" projectID=4f8a16881b0d32c87ce9ba5f167d672c8b9a0e31
+timestamp=2026-06-22T01:30:23.691Z level=INFO run=2ba66571 message=loop session.id=ses_1130cc6b4ffez4dZEXs4Pg7COo step=0
+timestamp=2026-06-22T01:30:23.693Z level=INFO run=2ba66571 message="shell tool using shell" shell=/bin/zsh
+timestamp=2026-06-22T01:30:23.759Z level=INFO run=2ba66571 message="project copy refresh done" projectID=4f8a16881b0d32c87ce9ba5f167d672c8b9a0e31 updated=[] removed=[]
+timestamp=2026-06-22T01:30:24.521Z level=INFO run=2ba66571 message=init count=1
+timestamp=2026-06-22T01:30:24.525Z level=INFO run=2ba66571 message=process session.id=ses_1130cc6b4ffez4dZEXs4Pg7COo messageID=msg_eecf33a4b001YNWKXGEO6OMtOA
+timestamp=2026-06-22T01:30:24.526Z level=INFO run=2ba66571 message=stream providerID=deepseek modelID=deepseek-v4-flash session.id=ses_1130cc6b4ffez4dZEXs4Pg7COo small=false agent=build mode=primary
+timestamp=2026-06-22T01:30:24.527Z level=INFO run=2ba66571 message="llm runtime selected" llm.runtime=ai-sdk llm.provider=deepseek llm.model=deepseek-v4-flash
+timestamp=2026-06-22T01:30:25.835Z level=INFO run=2ba66571 message=evaluated permission=read pattern=AGENTS.md action.permission=read action.pattern=* action.action=allow
+timestamp=2026-06-22T01:30:25.847Z level=INFO run=2ba66571 message="touching file" file=/Users/grapeot/co/knowledge_working/AGENTS.md
+timestamp=2026-06-22T01:30:25.893Z level=INFO run=2ba66571 message=loop session.id=ses_1130cc6b4ffez4dZEXs4Pg7COo step=1
+timestamp=2026-06-22T01:30:25.898Z level=INFO run=2ba66571 message=process session.id=ses_1130cc6b4ffez4dZEXs4Pg7COo messageID=msg_eecf342e600167dSSOmCcnh1Sl
+timestamp=2026-06-22T01:30:25.899Z level=INFO run=2ba66571 message=stream providerID=deepseek modelID=deepseek-v4-flash session.id=ses_1130cc6b4ffez4dZEXs4Pg7COo small=false agent=build mode=primary
+timestamp=2026-06-22T01:30:25.899Z level=INFO run=2ba66571 message="llm runtime selected" llm.runtime=ai-sdk llm.provider=deepseek llm.model=deepseek-v4-flash
+timestamp=2026-06-22T01:30:26.872Z level=INFO run=2ba66571 message=loop session.id=ses_1130cc6b4ffez4dZEXs4Pg7COo step=2
+timestamp=2026-06-22T01:30:26.872Z level=INFO run=2ba66571 message="exiting loop" session.id=ses_1130cc6b4ffez4dZEXs4Pg7COo
+timestamp=2026-06-22T01:30:27.462Z level=INFO run=2ba66571 message="removing share" sessionID=ses_1130cc6b4ffez4dZEXs4Pg7COo
+timestamp=2026-06-22T01:31:00.015Z level=INFO run=2ba66571 message=cleanup prune=7.days

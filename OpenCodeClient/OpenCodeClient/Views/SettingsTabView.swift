@@ -18,6 +18,7 @@ struct SettingsTabView: View {
     @State private var showRotateKeyAlert = false
     @State private var copiedPublicKey = false
     @State private var publicKeyForSheet = ""
+    @State private var showStrategyHelp = false
     @State private var publicKeyLoadError: String?
 
     private var supportsCarMode: Bool {
@@ -177,6 +178,37 @@ struct SettingsTabView: View {
                     }
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("settings-recording-strategy")
+
+                    HStack(spacing: 6) {
+                        Button {
+                            showStrategyHelp = true
+                        } label: {
+                            Image(systemName: "info.circle.fill")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.white)
+                                .frame(width: 22, height: 22)
+                                .background(DesignColors.Semantic.info)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            showStrategyHelp = true
+                        } label: {
+                            Text(L10n.t(.settingsStrategyHelp))
+                                .font(.caption)
+                                .foregroundStyle(DesignColors.Semantic.info)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .alert(
+                        Text(L10n.t(.settingsStrategyDialogTitle)),
+                        isPresented: $showStrategyHelp
+                    ) {
+                        Button(L10n.t(.commonOk), role: .cancel) {}
+                    } message: {
+                        Text(L10n.t(.settingsStrategyDialogBody))
+                    }
 
                     TextField(L10n.t(.settingsAiBuilderBaseURL), text: $state.aiBuilderBaseURL)
                         .textContentType(.URL)
