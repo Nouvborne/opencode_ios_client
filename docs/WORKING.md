@@ -19,6 +19,12 @@
 - Car retry state now distinguishes transcription retry from OpenCode request retry, so a transcription failure cannot resend the previous `carLastTranscript`.
 - Validation: strict Swift 6 standalone runtime checks pass for source/destination draft routing, session-switch detach versus cancellation preservation, and ordered sender order/capacity/drain. Deterministic app tests cover switch-at-finalize completion and destination-draft isolation. The Xcode package reference now pins exact VoiceFlowKit `0.4.0`.
 
+### 2026-07-31 — Markdown Web Preview native MathML
+
+- Web Preview now bundles Temml 0.13.4 and converts `$...$` / `$$...$$` TeX to MathML inside markdown-it before DOMPurify. Parsing preserves escaped dollars, code spans/fences, and ordinary currency.
+- DOMPurify no longer combines `ALLOWED_TAGS` with an overriding broad `USE_PROFILES`; the shell now uses one explicit HTML/SVG/MathML allowlist and sanitizes generated MathML in the same pass as the document.
+- Headless verification covers inline/display math, `\\xrightarrow`, fractions, invalid TeX fallback, delimiter edge cases, and removal of undeclared profile-only tags. iOS fixtures add light/dark screenshot coverage for the arrow-heavy formula shape.
+
 ### 2026-07-30 — Pin VoiceFlowKit 0.3.0
 
 - SPM 依赖从 bare revision 改为 exact SemVer `0.3.0`（`Package.resolved` 对应 merge commit `71b9fe6`）。

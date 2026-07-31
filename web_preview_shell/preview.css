@@ -157,6 +157,24 @@ body {
   white-space: pre;
 }
 
+/* ---- Native MathML (generated locally by Temml) ---- */
+#content math {
+  color: var(--fg);
+  font-size: 1.05em;
+}
+#content math[display="block"] {
+  display: block;
+  max-width: 100%;
+  margin: 0.9em 0;
+  padding: 0.2em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+#content merror {
+  color: #f87171;
+}
+
 /* ---- Tables: scroll horizontally on narrow screens ---- */
 /* renderMarkdown wraps each <table> in <div class="md-table-wrap"> */
 #content .md-table-wrap {

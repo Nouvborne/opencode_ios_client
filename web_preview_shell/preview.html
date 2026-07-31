@@ -7,6 +7,7 @@
   <title>Markdown Web Preview</title>
   <!-- All assets are local & relative. No CDN, no network at render time. -->
   <link rel="stylesheet" href="preview.css">
+  <link rel="stylesheet" href="vendor/Temml-Local.css">
 </head>
 <body>
   <div id="content"></div>
@@ -14,6 +15,7 @@
   <!-- Vendor libs (pinned, bundled). markdown-it -> window.markdownit, DOMPurify -> window.DOMPurify -->
   <script src="vendor/markdown-it.min.js"></script>
   <script src="vendor/purify.min.js"></script>
+  <script src="vendor/temml.min.js"></script>
   <!-- App entry: defines window.renderMarkdown(payload) -->
   <script src="preview.js"></script>
 </body>

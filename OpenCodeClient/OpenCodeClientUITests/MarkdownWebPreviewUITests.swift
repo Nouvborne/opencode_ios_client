@@ -77,6 +77,24 @@ final class MarkdownWebPreviewUITests: XCTestCase {
         try capture(app, named: "web_preview_wide_table")
     }
 
+    @MainActor
+    func testMathFormulasLight() throws {
+        let app = launchWebPreview(fixture: "math_formulas", dark: false)
+        assertWebViewVisible(app)
+        let sentinel = app.webViews.firstMatch.staticTexts["MATH_FORMULA_SENTINEL"]
+        XCTAssertTrue(sentinel.waitForExistence(timeout: 12), "Math fixture 应完成渲染")
+        try capture(app, named: "web_preview_math_formulas_light")
+    }
+
+    @MainActor
+    func testMathFormulasDark() throws {
+        let app = launchWebPreview(fixture: "math_formulas", dark: true)
+        assertWebViewVisible(app)
+        let sentinel = app.webViews.firstMatch.staticTexts["MATH_FORMULA_SENTINEL"]
+        XCTAssertTrue(sentinel.waitForExistence(timeout: 12), "Dark math fixture 应完成渲染")
+        try capture(app, named: "web_preview_math_formulas_dark")
+    }
+
     /// Security: the malicious fixture's sentinel text must render, proving the
     /// page loaded, while the injected <script> must NOT execute (no alert, no
     /// crash). We assert the sentinel is reachable in the webview's text.

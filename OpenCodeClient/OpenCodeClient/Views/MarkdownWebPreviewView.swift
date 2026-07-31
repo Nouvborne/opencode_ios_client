@@ -3,9 +3,9 @@
 //  OpenCodeClient
 //
 //  WebView-based Markdown preview. Loads a bundled local HTML/JS/CSS shell
-//  (preview.html + markdown-it + DOMPurify) into a WKWebView and renders the
+//  (preview.html + markdown-it + Temml + DOMPurify) into a WKWebView and renders the
 //  Markdown via window.renderMarkdown({markdown, theme}). The shell is the
-//  gatekeeper: markdown-it parses, DOMPurify sanitizes. No network at render
+//  gatekeeper: markdown-it parses, Temml emits MathML, and DOMPurify sanitizes. No network at render
 //  time; all renderer assets ship in the app bundle.
 //
 //  See docs/Markdown_Web_Preview_RFC.md.
