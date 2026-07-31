@@ -6,18 +6,18 @@
 
 - **最后更新**：2026-07-31
 - **分支**：`feat/gpt-live-transcribe`
-- **编译/测试**：VoiceFlowKit is pinned to feature commit `1f4859913773020504d6fe237168b32a8e4eaa5d`. iOS Simulator build passed; the two speech suites passed 26/26. The full suite still has unrelated `LayoutConstantsTests.splitViewFractions` and `ToolCardsUITests.testToolCardsFixtureRendersFileCardsAndMergedToolCalls` failures.
-- **Phase**：GPT Realtime / GPT Live Transcribe / Grok STT host integration; pinned to VoiceFlowKit PR 1 commit, awaiting exact `0.4.0` before merge
+- **编译/测试**：VoiceFlowKit is pinned to exact `0.4.0`; iOS Simulator build and both speech suites (26/26) passed against the release. The preceding full suite still had unrelated `LayoutConstantsTests.splitViewFractions` and `ToolCardsUITests.testToolCardsFixtureRendersFileCardsAndMergedToolCalls` failures.
+- **Phase**：GPT Realtime / GPT Live Transcribe / Grok STT host integration; exact VoiceFlowKit `0.4.0` release pin
 
 ### 2026-07-31 — GPT Live Transcribe host integration
 
-- New installations default to GPT Live Transcribe without overwriting a valid saved strategy. Chat now renders the Kit's accumulated GPT Live snapshots directly in the composer during recording; GPT Realtime remains finalize-only. The Kit pin advances to `1f4859913773020504d6fe237168b32a8e4eaa5d` for the recording-time snapshot contract.
+- New installations default to GPT Live Transcribe without overwriting a valid saved strategy. Chat now renders the Kit's accumulated GPT Live snapshots directly in the composer during recording; GPT Realtime remains finalize-only. The Kit dependency now uses exact release `0.4.0`.
 - Settings now persists and displays the third `gptLiveTranscribe` strategy in a menu. Both GPT strategies use realtime transport and expose the custom prompt; existing valid saved values remain unchanged.
 - Chat and Car snapshot strategy at Start and pass it into strategy-aware Kit sessions. Preserved retries route through the handle's originating strategy, while file retries keep their captured strategy.
 - Realtime audio chunks now pass through one bounded ordered sender per capture; Stop/Cancel drains that worker before commit or preservation. Realtime finalization failures retain recoverable audio.
 - Chat pending audio is keyed by its originating OpenCode session, and every start/finalization/retry callback is gated by attempt plus session ownership. A session switch now detaches an in-flight finalization without revoking ownership: success persists the completed transcript to the source session draft while leaving the destination composer unchanged, and failure preserves source-owned audio. The navigation snapshot is synchronous so it cannot overwrite a just-completed source transcript; background/explicit cancellation still aborts and preserves. Car uses a generation gate so New Session invalidates old permission, microphone, transcript, and request continuations without carrying old audio into the new session.
 - Car retry state now distinguishes transcription retry from OpenCode request retry, so a transcription failure cannot resend the previous `carLastTranscript`.
-- Validation: strict Swift 6 standalone runtime checks pass for source/destination draft routing, session-switch detach versus cancellation preservation, and ordered sender order/capacity/drain. Deterministic app tests cover switch-at-finalize completion and destination-draft isolation. The Xcode package reference now pins VoiceFlowKit PR 1 commit `2be5dfa2925c451102aa9797bd35be757c9205bf`. Follow-up: replace that revision with exact `0.4.0` after Kit release and rerun build, focused speech/Car tests, full tests, UI tests, and visionOS build sequentially.
+- Validation: strict Swift 6 standalone runtime checks pass for source/destination draft routing, session-switch detach versus cancellation preservation, and ordered sender order/capacity/drain. Deterministic app tests cover switch-at-finalize completion and destination-draft isolation. The Xcode package reference now pins exact VoiceFlowKit `0.4.0`.
 
 ### 2026-07-30 — Pin VoiceFlowKit 0.3.0
 
