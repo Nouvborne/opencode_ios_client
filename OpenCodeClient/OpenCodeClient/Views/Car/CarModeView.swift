@@ -2,14 +2,45 @@ import SwiftUI
 import os
 import VoiceFlowKit
 
+enum PendingCarAudio {
+    case file(URL, strategy: VoiceFlowRecordingStrategy)
+    case preserved(VoiceFlowPreservedAudio)
+
+    var strategy: VoiceFlowRecordingStrategy {
+        switch self {
+        case .file(_, let strategy): strategy
+        case .preserved(let audio): audio.strategy
+        }
+    }
+}
+
+private enum CarFailureRetry {
+    case transcription
+    case request
+}
+
+enum CarSpeechAttemptGate {
+    static func accepts(
+        _ attemptID: UUID,
+        activeAttemptID: UUID?,
+        generation: UUID,
+        currentGeneration: UUID
+    ) -> Bool {
+        attemptID == activeAttemptID && generation == currentGeneration
+    }
+}
+
 struct CarModeView: View {
     @Bindable var state: AppState
     @State private var microphone = VoiceFlowMicrophone()
     @State private var speechSession: VoiceFlowSession?
+    @State private var audioSender: OrderedSpeechAudioSender?
+    @State private var speechGeneration = UUID()
     @State private var recordingStartID: UUID?
+    @State private var activeRecordingGeneration: UUID?
     @State private var activeRecordingStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
-    @State private var pendingRecordingURL: URL?
-    @State private var pendingRecordingStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
+    @State private var pendingAudio: PendingCarAudio?
+    @State private var failureRetry: CarFailureRetry?
     @State private var heartbeatTask: Task<Void, Never>?
     @State private var audioLevelTask: Task<Void, Never>?
     @State private var audioLevel: Float = 0
@@ -95,7 +126,7 @@ struct CarModeView: View {
             }
             .confirmationDialog(L10n.t(.carNewSessionPrompt), isPresented: $showNewSessionConfirmation) {
                 Button(L10n.t(.carNewSession), role: .destructive) {
-                    Task { await state.startNewCarSession() }
+                    Task { await startNewCarSession() }
                 }
                 Button(L10n.t(.commonCancel), role: .cancel) {}
             }
@@ -236,19 +267,87 @@ struct CarModeView: View {
         }
     }
 
+    private func finishAudioSender() async {
+        let sender = audioSender
+        audioSender = nil
+        await sender?.finishAndDrain()
+    }
+
+    private func replacePendingAudio(_ audio: PendingCarAudio) {
+        discardPendingRecording()
+        pendingAudio = audio
+    }
+
+    private func startNewCarSession() async {
+        speechGeneration = UUID()
+        await cancelLocalCarSpeech(preserveAudio: false)
+        await state.startNewCarSession()
+    }
+
+    private func cancelLocalCarSpeech(preserveAudio: Bool) async {
+        let strategy = activeRecordingStrategy
+        let hadLocalSpeech = isStartingRecording
+            || speechSession != nil
+            || state.carPhase == .recording
+            || state.carPhase == .finalizing
+        recordingStartID = nil
+        speechFinalizationID = nil
+        isStartingRecording = false
+        stopHeartbeat()
+        stopAudioLevelConsumer()
+        let audioURL = try? await microphone.stop()
+        microphone.discard()
+        await finishAudioSender()
+
+        let session = speechSession
+        speechSession = nil
+        activeRecordingGeneration = nil
+
+        if preserveAudio, hadLocalSpeech {
+            if strategy.usesRealtimeTransport {
+                if let audioURL { try? FileManager.default.removeItem(at: audioURL) }
+                if let session, let preserved = await preserve(session) {
+                    replacePendingAudio(.preserved(preserved))
+                }
+            } else if let audioURL {
+                replacePendingAudio(.file(audioURL, strategy: strategy))
+            }
+        } else {
+            if let audioURL { try? FileManager.default.removeItem(at: audioURL) }
+            if let session { await terminate(session) }
+            if !preserveAudio { discardPendingRecording() }
+        }
+
+        await state.cancelCarInteraction()
+        if preserveAudio, pendingAudio != nil {
+            failureRetry = .transcription
+            state.carPhase = .failed
+        } else {
+            failureRetry = nil
+        }
+    }
+
     private func handlePrimaryAction() async {
         switch displayPhase {
         case .recording:
             await stopRecordingAndSubmit()
         case .finalizing, .waitingReply, .speaking:
-            speechFinalizationID = nil
-            discardPendingRecording()
-            await state.cancelCarInteraction()
+            await cancelLocalCarSpeech(preserveAudio: true)
         case .failed:
-            if pendingRecordingURL != nil {
-                await retryPendingRecording()
-            } else {
+            switch failureRetry {
+            case .transcription:
+                if pendingAudio != nil {
+                    await retryPendingRecording()
+                } else {
+                    await startRecording()
+                }
+            case .request:
                 await state.submitCarTurn(state.carLastTranscript)
+                if state.carPhase != .failed {
+                    failureRetry = nil
+                }
+            case nil:
+                await startRecording()
             }
         case .idle, .awaitingConfirmation:
             await startRecording()
@@ -268,52 +367,92 @@ struct CarModeView: View {
             state.carPhase = .failed
             return
         }
+        let strategy = state.aiBuilderRecordingStrategy
+        let generation = speechGeneration
         let startID = UUID()
         recordingStartID = startID
+        activeRecordingGeneration = generation
         isStartingRecording = true
         guard await ChatTabView.requestMicrophonePermissionForRecording() else {
-            guard recordingStartID == startID else { return }
+            guard CarSpeechAttemptGate.accepts(
+                startID,
+                activeAttemptID: recordingStartID,
+                generation: generation,
+                currentGeneration: speechGeneration
+            ) else { return }
             recordingStartID = nil
+            activeRecordingGeneration = nil
             isStartingRecording = false
             state.carError = L10n.t(.chatMicrophoneDenied)
             state.carPhase = .failed
             return
         }
 
-        guard recordingStartID == startID else { return }
+        guard CarSpeechAttemptGate.accepts(
+            startID,
+            activeAttemptID: recordingStartID,
+            generation: generation,
+            currentGeneration: speechGeneration
+        ) else { return }
         speechFinalizationID = nil
         discardPendingRecording()
+        failureRetry = nil
         state.carSpeechOutput.stop()
         let startingMicrophone = VoiceFlowMicrophone()
         microphone = startingMicrophone
         var startedSession: VoiceFlowSession?
         do {
-            let strategy = state.aiBuilderRecordingStrategy
             activeRecordingStrategy = strategy
             if strategy.usesRealtimeTransport {
-                let session = try await state.startRealtimeSpeechSession()
+                let session = try await state.startRealtimeSpeechSession(strategy: strategy, surface: .car)
                 startedSession = session
-                guard recordingStartID == startID else {
+                guard CarSpeechAttemptGate.accepts(
+                    startID,
+                    activeAttemptID: recordingStartID,
+                    generation: generation,
+                    currentGeneration: speechGeneration
+                ) else {
                     await terminate(session)
                     return
                 }
                 speechSession = session
+                let sender = OrderedSpeechAudioSender { chunk in
+                    await session.sendAudioChunk(chunk)
+                }
+                audioSender = sender
                 try await startingMicrophone.start(strategy: strategy) { chunk in
-                    Task { await session.sendAudioChunk(chunk) }
+                    sender.enqueue(chunk)
                 }
             } else {
                 speechSession = nil
                 try await startingMicrophone.start(strategy: strategy)
             }
-            guard recordingStartID == startID else {
-                if let audioURL = try? await startingMicrophone.stop() {
-                    try? FileManager.default.removeItem(at: audioURL)
-                }
+            guard CarSpeechAttemptGate.accepts(
+                startID,
+                activeAttemptID: recordingStartID,
+                generation: generation,
+                currentGeneration: speechGeneration
+            ) else {
+                let audioURL = try? await startingMicrophone.stop()
                 startingMicrophone.discard()
-                if let startedSession {
-                    await terminate(startedSession)
-                    if speechSession === startedSession {
+                await finishAudioSender()
+                if strategy.usesRealtimeTransport {
+                    if let audioURL { try? FileManager.default.removeItem(at: audioURL) }
+                    if let startedSession, speechSession === startedSession {
                         speechSession = nil
+                        if generation == speechGeneration {
+                            if let preserved = await preserve(startedSession) {
+                                replacePendingAudio(.preserved(preserved))
+                            }
+                        } else {
+                            await terminate(startedSession)
+                        }
+                    }
+                } else if let audioURL {
+                    if generation == speechGeneration {
+                        replacePendingAudio(.file(audioURL, strategy: strategy))
+                    } else {
+                        try? FileManager.default.removeItem(at: audioURL)
                     }
                 }
                 return
@@ -325,27 +464,52 @@ struct CarModeView: View {
             state.carPhase = .recording
             startAudioLevelConsumer()
         } catch {
-            if let audioURL = try? await startingMicrophone.stop() {
-                try? FileManager.default.removeItem(at: audioURL)
-            }
+            let audioURL = try? await startingMicrophone.stop()
             startingMicrophone.discard()
-            if let startedSession {
-                await terminate(startedSession)
-                if speechSession === startedSession {
+            await finishAudioSender()
+            if strategy.usesRealtimeTransport {
+                if let audioURL { try? FileManager.default.removeItem(at: audioURL) }
+                if let startedSession, speechSession === startedSession {
                     speechSession = nil
+                    if generation == speechGeneration {
+                        if let preserved = await preserve(startedSession) {
+                            replacePendingAudio(.preserved(preserved))
+                        }
+                    } else {
+                        await terminate(startedSession)
+                    }
+                }
+            } else if let audioURL {
+                if generation == speechGeneration {
+                    replacePendingAudio(.file(audioURL, strategy: strategy))
+                } else {
+                    try? FileManager.default.removeItem(at: audioURL)
                 }
             }
-            guard recordingStartID == startID else { return }
+            guard CarSpeechAttemptGate.accepts(
+                startID,
+                activeAttemptID: recordingStartID,
+                generation: generation,
+                currentGeneration: speechGeneration
+            ) else { return }
+            activeRecordingGeneration = nil
+            if pendingAudio != nil { failureRetry = .transcription }
             state.carError = error.localizedDescription
             state.carPhase = .failed
         }
-        if recordingStartID == startID {
+        if CarSpeechAttemptGate.accepts(
+            startID,
+            activeAttemptID: recordingStartID,
+            generation: generation,
+            currentGeneration: speechGeneration
+        ) {
             recordingStartID = nil
             isStartingRecording = false
         }
     }
 
     private func stopRecordingAndSubmit() async {
+        guard let generation = activeRecordingGeneration else { return }
         let finalizationID = UUID()
         speechFinalizationID = finalizationID
         let stoppingMicrophone = microphone
@@ -353,9 +517,19 @@ struct CarModeView: View {
         stopAudioLevelConsumer()
         let audioURL = try? await stoppingMicrophone.stop()
         stoppingMicrophone.discard()
-        guard speechFinalizationID == finalizationID else {
+        await finishAudioSender()
+        guard CarSpeechAttemptGate.accepts(
+            finalizationID,
+            activeAttemptID: speechFinalizationID,
+            generation: generation,
+            currentGeneration: speechGeneration
+        ) else {
             if let audioURL {
-                try? FileManager.default.removeItem(at: audioURL)
+                if activeRecordingStrategy.usesRealtimeTransport || generation != speechGeneration {
+                    try? FileManager.default.removeItem(at: audioURL)
+                } else {
+                    replacePendingAudio(.file(audioURL, strategy: activeRecordingStrategy))
+                }
             }
             return
         }
@@ -365,13 +539,14 @@ struct CarModeView: View {
         if !strategy.usesRealtimeTransport {
             guard let audioURL else {
                 speechFinalizationID = nil
+                activeRecordingGeneration = nil
+                failureRetry = .transcription
                 state.carError = L10n.t(.carTranscriptionFailed)
                 state.carPhase = .failed
                 return
             }
-            pendingRecordingURL = audioURL
-            pendingRecordingStrategy = strategy
-            await transcribePendingRecording(finalizationID: finalizationID)
+            replacePendingAudio(.file(audioURL, strategy: strategy))
+            await transcribePendingRecording(finalizationID: finalizationID, generation: generation)
             return
         }
 
@@ -380,83 +555,151 @@ struct CarModeView: View {
         }
         guard let session = speechSession else {
             speechFinalizationID = nil
+            activeRecordingGeneration = nil
+            failureRetry = .transcription
             state.carError = L10n.t(.carTranscriptionFailed)
             state.carPhase = .failed
             return
         }
-        speechSession = nil
 
+        let partialTranscriptBuffer = SpeechPartialTranscriptBuffer()
         do {
-            let transcript = try await session.commitAndStop()
-            await terminate(session)
+            let transcript = try await session.commitAndStop { partial in
+                partialTranscriptBuffer.update(partial)
+            }
+            partialTranscriptBuffer.close()
             let cleaned = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !cleaned.isEmpty else { throw CarModeError.invalidResponse }
-            guard speechFinalizationID == finalizationID else { return }
+            guard CarSpeechAttemptGate.accepts(
+                finalizationID,
+                activeAttemptID: speechFinalizationID,
+                generation: generation,
+                currentGeneration: speechGeneration
+            ),
+                  speechSession === session else {
+                await terminate(session)
+                return
+            }
+            await terminate(session)
+            guard CarSpeechAttemptGate.accepts(
+                finalizationID,
+                activeAttemptID: speechFinalizationID,
+                generation: generation,
+                currentGeneration: speechGeneration
+            ),
+                  speechSession === session else { return }
+            speechSession = nil
+            activeRecordingGeneration = nil
             speechFinalizationID = nil
             discardPendingRecording()
+            failureRetry = .request
             await state.submitCarTurn(cleaned)
+            if state.carPhase != .failed {
+                failureRetry = nil
+            }
         } catch {
-            await terminate(session)
-            guard speechFinalizationID == finalizationID else { return }
+            partialTranscriptBuffer.close()
+            guard CarSpeechAttemptGate.accepts(
+                finalizationID,
+                activeAttemptID: speechFinalizationID,
+                generation: generation,
+                currentGeneration: speechGeneration
+            ), speechSession === session else { return }
+            speechSession = nil
+            let preserved = await preserve(session)
+            guard generation == speechGeneration else {
+                if let preserved { state.discardPreservedAudio(preserved) }
+                return
+            }
+            if let preserved {
+                replacePendingAudio(.preserved(preserved))
+            }
+            guard CarSpeechAttemptGate.accepts(
+                finalizationID,
+                activeAttemptID: speechFinalizationID,
+                generation: generation,
+                currentGeneration: speechGeneration
+            ) else { return }
+            activeRecordingGeneration = nil
             speechFinalizationID = nil
+            let partial = partialTranscriptBuffer.current().trimmingCharacters(in: .whitespacesAndNewlines)
+            if !partial.isEmpty {
+                state.carLastTranscript = partial
+            }
+            failureRetry = .transcription
             state.carError = error.localizedDescription
             state.carPhase = .failed
         }
     }
 
     private func stopForBackground() async {
-        recordingStartID = nil
-        isStartingRecording = false
-        speechFinalizationID = nil
-        stopHeartbeat()
-        stopAudioLevelConsumer()
-        if let audioURL = try? await microphone.stop() {
-            try? FileManager.default.removeItem(at: audioURL)
-        }
-        microphone.discard()
-        if let session = speechSession {
-            speechSession = nil
-            await terminate(session)
-        }
-        await state.cancelCarInteraction()
-        discardPendingRecording()
+        await cancelLocalCarSpeech(preserveAudio: true)
     }
 
     private func retryPendingRecording() async {
-        guard pendingRecordingURL != nil else { return }
+        guard pendingAudio != nil else { return }
         state.carPhase = .finalizing
+        let generation = speechGeneration
         let finalizationID = UUID()
         speechFinalizationID = finalizationID
-        await transcribePendingRecording(finalizationID: finalizationID)
+        await transcribePendingRecording(finalizationID: finalizationID, generation: generation)
     }
 
-    private func transcribePendingRecording(finalizationID: UUID) async {
-        guard let audioURL = pendingRecordingURL else { return }
+    private func transcribePendingRecording(finalizationID: UUID, generation: UUID) async {
+        guard let pendingAudio else { return }
         do {
-            let transcript = try await state.transcribeAudio(
-                audioFileURL: audioURL,
-                strategy: pendingRecordingStrategy
-            )
+            let transcript: String
+            switch pendingAudio {
+            case .file(let audioURL, let strategy):
+                transcript = try await state.transcribeAudio(
+                    audioFileURL: audioURL,
+                    strategy: strategy,
+                    surface: .car
+                )
+            case .preserved(let preserved):
+                transcript = try await state.transcribePreservedAudio(preserved, surface: .car)
+            }
             let cleaned = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !cleaned.isEmpty else { throw CarModeError.invalidResponse }
-            guard speechFinalizationID == finalizationID else { return }
+            guard CarSpeechAttemptGate.accepts(
+                finalizationID,
+                activeAttemptID: speechFinalizationID,
+                generation: generation,
+                currentGeneration: speechGeneration
+            ) else { return }
             speechFinalizationID = nil
+            activeRecordingGeneration = nil
             discardPendingRecording()
+            failureRetry = .request
             await state.submitCarTurn(cleaned)
+            if state.carPhase != .failed {
+                failureRetry = nil
+            }
         } catch {
-            guard speechFinalizationID == finalizationID else { return }
+            guard CarSpeechAttemptGate.accepts(
+                finalizationID,
+                activeAttemptID: speechFinalizationID,
+                generation: generation,
+                currentGeneration: speechGeneration
+            ) else { return }
             speechFinalizationID = nil
+            activeRecordingGeneration = nil
+            failureRetry = .transcription
             state.carError = error.localizedDescription
             state.carPhase = .failed
         }
     }
 
     private func discardPendingRecording() {
-        if let pendingRecordingURL {
-            try? FileManager.default.removeItem(at: pendingRecordingURL)
+        switch pendingAudio {
+        case .file(let audioURL, _):
+            try? FileManager.default.removeItem(at: audioURL)
+        case .preserved(let preserved):
+            state.discardPreservedAudio(preserved)
+        case nil:
+            break
         }
-        pendingRecordingURL = nil
-        pendingRecordingStrategy = .openAIRealtime
+        pendingAudio = nil
     }
 
     private func terminate(_ session: VoiceFlowSession) async {
@@ -466,6 +709,15 @@ struct CarModeView: View {
             }
         } catch {
             AppState.logger.error("Car speech session termination failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func preserve(_ session: VoiceFlowSession) async -> VoiceFlowPreservedAudio? {
+        do {
+            return try await session.abortPreservingAudio()
+        } catch {
+            AppState.logger.error("Car speech audio preservation failed: \(error.localizedDescription, privacy: .public)")
+            return nil
         }
     }
 

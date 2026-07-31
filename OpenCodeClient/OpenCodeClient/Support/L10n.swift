@@ -103,6 +103,7 @@ enum L10n {
         case settingsSpeechRecognition
         case settingsRecordingStrategy
         case settingsOpenAIRealtime
+        case settingsGPTLiveTranscribe
         case settingsGrokBatch
         case settingsStrategyHelp
         case settingsStrategyDialogTitle
@@ -113,6 +114,7 @@ enum L10n {
         case settingsTerminology
         case settingsTesting
         case settingsTested
+        case settingsTestConnectionScope
         case settingsAbout
         case settingsServerVersion
         case settingsExperimentalFeatures
@@ -560,16 +562,18 @@ enum L10n {
         Key.settingsSpeechRecognition.rawValue: "Speech Recognition",
         Key.settingsRecordingStrategy.rawValue: "Recording Strategy",
         Key.settingsOpenAIRealtime.rawValue: "GPT Realtime",
+        Key.settingsGPTLiveTranscribe.rawValue: "GPT Live Transcribe",
         Key.settingsGrokBatch.rawValue: "Grok STT",
         Key.settingsStrategyHelp.rawValue: "Which one should I choose?",
         Key.settingsStrategyDialogTitle.rawValue: "Which one should I choose?",
-        Key.settingsStrategyDialogBody.rawValue: "GPT Realtime — better formatting, punctuation, and accuracy. Shows a live transcript while you speak.\n\nGrok STT — about 10x cheaper, slightly lower accuracy, no live transcript. Records locally and uploads after Stop.\n\nRecommendation: For content a human will read (notes, messages, articles), prefer GPT Realtime. For content an AI agent will process (commands, prompts, logs), Grok STT is usually good enough — AI tolerates typos and messy formatting far better than people do.",
+        Key.settingsStrategyDialogBody.rawValue: "GPT Realtime — conversational realtime transcription with strong formatting and punctuation.\n\nGPT Live Transcribe — dedicated live transcription over the same realtime transport.\n\nGrok STT — lower-cost batch transcription. Records locally and uploads after Stop.",
         Key.settingsAiBuilderBaseURL.rawValue: "AI Builder Base URL",
         Key.settingsAiBuilderToken.rawValue: "AI Builder Token",
         Key.settingsCustomPrompt.rawValue: "Custom Prompt",
         Key.settingsTerminology.rawValue: "Terminology (comma-separated)",
         Key.settingsTesting.rawValue: "Testing...",
         Key.settingsTested.rawValue: "OK",
+        Key.settingsTestConnectionScope.rawValue: "Test Connection checks endpoint and token access only. It does not validate the selected transcription strategy.",
         Key.settingsAbout.rawValue: "About",
         Key.settingsServerVersion.rawValue: "Server Version",
         Key.settingsExperimentalFeatures.rawValue: "Experimental Features",
@@ -1016,16 +1020,18 @@ enum L10n {
         Key.settingsSpeechRecognition.rawValue: "语音识别",
         Key.settingsRecordingStrategy.rawValue: "录音策略",
         Key.settingsOpenAIRealtime.rawValue: "GPT Realtime",
+        Key.settingsGPTLiveTranscribe.rawValue: "GPT Live Transcribe",
         Key.settingsGrokBatch.rawValue: "Grok STT",
         Key.settingsStrategyHelp.rawValue: "我该选哪个？",
         Key.settingsStrategyDialogTitle.rawValue: "我该选哪个？",
-        Key.settingsStrategyDialogBody.rawValue: "GPT Realtime——排版、标点和准确率更好，说话时能看到实时字幕。\n\nGrok STT——价格约为前者的 1/10，准确率略低，无实时字幕；本地录音，停止后上传。\n\n建议：给人看的内容（笔记、消息、文章）用 GPT Realtime；给 AI 处理的内容（指令、prompt、日志）用 Grok STT 就够——AI 对错别字和排版的包容度比人高得多。",
+        Key.settingsStrategyDialogBody.rawValue: "GPT Realtime：对话式实时转写，排版和标点能力较强。\n\nGPT Live Transcribe：使用同一实时传输链路的专用实时转写。\n\nGrok STT：成本较低的批量转写；本地录音，停止后上传。",
         Key.settingsAiBuilderBaseURL.rawValue: "AI Builder 服务地址",
         Key.settingsAiBuilderToken.rawValue: "AI Builder 访问令牌",
         Key.settingsCustomPrompt.rawValue: "自定义提示词",
         Key.settingsTerminology.rawValue: "术语（逗号分隔）",
         Key.settingsTesting.rawValue: "测试中...",
         Key.settingsTested.rawValue: "可用",
+        Key.settingsTestConnectionScope.rawValue: "测试连接只检查服务地址和令牌是否可用，不验证当前选择的转写策略。",
         Key.settingsAbout.rawValue: "关于",
         Key.settingsServerVersion.rawValue: "服务器版本",
         Key.settingsExperimentalFeatures.rawValue: "实验性功能",

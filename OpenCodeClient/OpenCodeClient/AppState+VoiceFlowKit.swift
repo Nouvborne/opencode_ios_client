@@ -2,8 +2,9 @@ import Foundation
 import os
 import VoiceFlowKit
 
-extension VoiceFlowRecordingStrategy {
-    var usesRealtimeTransport: Bool { self == .openAIRealtime }
+enum SpeechSurface: String {
+    case chat
+    case car
 }
 
 /// VoiceFlowKit speech recognition integration. Wraps the kit's
@@ -42,12 +43,12 @@ extension AppState {
 
     func transcribeAudio(
         audioFileURL: URL,
-        strategy: VoiceFlowRecordingStrategy = .openAIRealtime,
+        strategy: VoiceFlowRecordingStrategy,
+        surface: SpeechSurface,
         onPartialTranscript: (@Sendable (String) -> Void)? = nil
     ) async throws -> String {
         let start = ProcessInfo.processInfo.systemUptime
-        let fileName = audioFileURL.lastPathComponent.isEmpty ? "audio.m4a" : audioFileURL.lastPathComponent
-        Self.logger.notice("[SpeechProfile] appState.transcribe begin file=\(fileName, privacy: .public)")
+        Self.logger.notice("[SpeechProfile] surface=\(surface.rawValue, privacy: .public) strategy=\(strategy.rawValue, privacy: .public) phase=transcribe outcome=started")
         do {
             let client = try makeVoiceFlowClient()
             let result = try await client.transcribe(
@@ -56,48 +57,59 @@ extension AppState {
                 onPartialTranscript: onPartialTranscript
             )
             let elapsedMs = max(0, Int((ProcessInfo.processInfo.systemUptime - start) * 1000))
-            Self.logger.notice("[SpeechProfile] appState.transcribe done ms=\(elapsedMs, privacy: .public) textChars=\(result.text.count, privacy: .public) requestID=\(result.requestID, privacy: .public)")
+            Self.logger.notice("[SpeechProfile] surface=\(surface.rawValue, privacy: .public) strategy=\(strategy.rawValue, privacy: .public) phase=transcribe outcome=succeeded ms=\(elapsedMs, privacy: .public)")
             return result.text
         } catch {
             let elapsedMs = max(0, Int((ProcessInfo.processInfo.systemUptime - start) * 1000))
-            Self.logger.error("[SpeechProfile] appState.transcribe failed ms=\(elapsedMs, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            Self.logger.error("[SpeechProfile] surface=\(surface.rawValue, privacy: .public) strategy=\(strategy.rawValue, privacy: .public) phase=transcribe outcome=failed ms=\(elapsedMs, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             throw error
         }
     }
 
-    func startRealtimeSpeechSession() async throws -> VoiceFlowSession {
+    func startRealtimeSpeechSession(
+        strategy: VoiceFlowRecordingStrategy,
+        surface: SpeechSurface
+    ) async throws -> VoiceFlowSession {
         let start = ProcessInfo.processInfo.systemUptime
-        Self.logger.notice("[SpeechProfile] appState.realtime start begin")
+        Self.logger.notice("[SpeechProfile] surface=\(surface.rawValue, privacy: .public) strategy=\(strategy.rawValue, privacy: .public) phase=start outcome=started")
         do {
             let client = try makeVoiceFlowClient()
-            let session = try await client.startSession()
+            let session = try await client.startSession(strategy: strategy)
             let elapsedMs = max(0, Int((ProcessInfo.processInfo.systemUptime - start) * 1000))
-            Self.logger.notice("[SpeechProfile] appState.realtime start done ms=\(elapsedMs, privacy: .public)")
+            Self.logger.notice("[SpeechProfile] surface=\(surface.rawValue, privacy: .public) strategy=\(strategy.rawValue, privacy: .public) phase=start outcome=succeeded ms=\(elapsedMs, privacy: .public)")
             return session
         } catch {
             let elapsedMs = max(0, Int((ProcessInfo.processInfo.systemUptime - start) * 1000))
-            Self.logger.error("[SpeechProfile] appState.realtime start failed ms=\(elapsedMs, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            Self.logger.error("[SpeechProfile] surface=\(surface.rawValue, privacy: .public) strategy=\(strategy.rawValue, privacy: .public) phase=start outcome=failed ms=\(elapsedMs, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
             throw error
         }
     }
 
     func transcribePreservedAudio(
         _ preservedAudio: VoiceFlowPreservedAudio,
+        surface: SpeechSurface,
         onPartialTranscript: (@Sendable (String) -> Void)? = nil
     ) async throws -> String {
-        let client = try makeVoiceFlowClient()
-        let result = try await client.transcribe(preservedAudio: preservedAudio, onPartialTranscript: onPartialTranscript)
-        return result.text
+        let strategy = preservedAudio.strategy
+        let start = ProcessInfo.processInfo.systemUptime
+        Self.logger.notice("[SpeechProfile] surface=\(surface.rawValue, privacy: .public) strategy=\(strategy.rawValue, privacy: .public) phase=retry outcome=started")
+        do {
+            let client = try makeVoiceFlowClient()
+            let result = try await client.transcribe(preservedAudio: preservedAudio, onPartialTranscript: onPartialTranscript)
+            let elapsedMs = max(0, Int((ProcessInfo.processInfo.systemUptime - start) * 1000))
+            Self.logger.notice("[SpeechProfile] surface=\(surface.rawValue, privacy: .public) strategy=\(strategy.rawValue, privacy: .public) phase=retry outcome=succeeded ms=\(elapsedMs, privacy: .public)")
+            return result.text
+        } catch {
+            let elapsedMs = max(0, Int((ProcessInfo.processInfo.systemUptime - start) * 1000))
+            Self.logger.error("[SpeechProfile] surface=\(surface.rawValue, privacy: .public) strategy=\(strategy.rawValue, privacy: .public) phase=retry outcome=failed ms=\(elapsedMs, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            throw error
+        }
     }
 
     func discardPreservedAudio(_ preservedAudio: VoiceFlowPreservedAudio) {
         Task {
-            do {
-                let client = try makeVoiceFlowClient()
-                await client.discardPreservedAudio(preservedAudio)
-            } catch {
-                Self.logger.error("[SpeechProfile] discard preserved audio failed error=\(error.localizedDescription, privacy: .public)")
-            }
+            let client = VoiceFlowClient(config: VoiceFlowConfig(tokenProvider: { "" }))
+            await client.discardPreservedAudio(preservedAudio)
         }
     }
 
