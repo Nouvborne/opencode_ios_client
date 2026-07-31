@@ -53,6 +53,7 @@ const { window } = dom;
 // Sanity: vendor globals + entry point present
 check("setup: window.markdownit loaded", typeof window.markdownit === "function");
 check("setup: window.DOMPurify loaded", !!(window.DOMPurify && window.DOMPurify.sanitize));
+check("setup: window.temml loaded", !!(window.temml && window.temml.renderToString));
 check("setup: window.renderMarkdown defined", typeof window.renderMarkdown === "function");
 
 const contentEl = () => window.document.getElementById("content");
@@ -134,7 +135,46 @@ window.renderMarkdown({ markdown: svgMd, theme: "dark" });
   );
 }
 
-// ---- Test 4: script injection stripped ----
+// ---- Test 4: inline and display TeX render to MathML ----
+const mathMd = [
+  "Inline $x \\xrightarrow{controller} y$ survives next to a price of $20 and $30.",
+  "",
+  "`$code$` and \\$escaped stay literal.",
+  "",
+  "$$\\frac{a_1}{b^2} = \\text{result}$$",
+  "",
+  "Operator attributes survive: $\\overset{!}{=}$"
+].join("\n");
+
+window.renderMarkdown({ markdown: mathMd, theme: "light" });
+{
+  const c = contentEl();
+  const maths = c.querySelectorAll("math");
+  const hasArrow = !!c.querySelector("math mover");
+  const hasFraction = !!c.querySelector('math[display="block"] mfrac');
+  const hasOperatorForm = !!c.querySelector('math mo[form="postfix"]');
+  const currencyStayedText = c.textContent.includes("$20 and $30");
+  const codeStayedLiteral = c.querySelector("code")?.textContent === "$code$";
+  const escapedStayedLiteral = c.textContent.includes("$escaped");
+  check(
+    "4. TeX renders to MathML without consuming currency/code",
+    maths.length === 3 && hasArrow && hasFraction && hasOperatorForm && currencyStayedText && codeStayedLiteral && escapedStayedLiteral,
+    `math=${maths.length} arrow=${hasArrow} frac=${hasFraction} operatorForm=${hasOperatorForm} currency=${currencyStayedText} code=${codeStayedLiteral} escaped=${escapedStayedLiteral}`
+  );
+}
+
+// ---- Test 5: invalid TeX stays local to one readable math error ----
+window.renderMarkdown({ markdown: "Before $\\notARealCommand{$ after", theme: "light" });
+{
+  const c = contentEl();
+  check(
+    "5. invalid TeX produces a readable local error",
+    !!c.querySelector(".temml-error") && c.textContent.includes("Before"),
+    `error=${!!c.querySelector(".temml-error")} text=${JSON.stringify(c.textContent)}`
+  );
+}
+
+// ---- Test 6: script injection and undeclared profile tags stripped ----
 const evilMd = [
   "Hello",
   "",
@@ -142,7 +182,11 @@ const evilMd = [
   "",
   '<img src="x" onerror="alert(2)">',
   "",
-  '<a href="javascript:alert(3)">bad link</a>'
+  '<a href="javascript:alert(3)">bad link</a>',
+  "",
+  '<video controls><source src="https://example.com/movie.mp4"></video>',
+  "",
+  "<section>undeclared section</section>"
 ].join("\n");
 
 window.renderMarkdown({ markdown: evilMd, theme: "dark" });
@@ -154,20 +198,21 @@ window.renderMarkdown({ markdown: evilMd, theme: "dark" });
   const noOnError = !img || !img.hasAttribute("onerror");
   const a = c.querySelector("a");
   const noJsHref = !a || !/javascript:/i.test(a.getAttribute("href") || "");
+  const noProfileOnlyTags = !c.querySelector("video, source, section");
   check(
-    "4. <script>/onerror/javascript: stripped",
-    noScriptTag && noOnError && noJsHref,
-    `noScript=${noScriptTag} noOnError=${noOnError} noJsHref=${noJsHref}`
+    "6. dangerous and undeclared profile tags stripped",
+    noScriptTag && noOnError && noJsHref && noProfileOnlyTags,
+    `noScript=${noScriptTag} noOnError=${noOnError} noJsHref=${noJsHref} noProfileOnly=${noProfileOnlyTags}`
   );
 }
 
-// ---- Test 5: dark theme sets data-theme ----
+// ---- Test 7: dark theme sets data-theme ----
 window.renderMarkdown({ markdown: "# Dark", theme: "dark" });
 const darkOK = window.document.documentElement.getAttribute("data-theme") === "dark";
 window.renderMarkdown({ markdown: "# Light", theme: "light" });
 const lightOK = window.document.documentElement.getAttribute("data-theme") === "light";
 check(
-  "5. theme sets data-theme (dark & light)",
+  "7. theme sets data-theme (dark & light)",
   darkOK && lightOK,
   `dark=${darkOK} light=${lightOK}`
 );

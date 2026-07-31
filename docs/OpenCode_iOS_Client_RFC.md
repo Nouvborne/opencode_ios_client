@@ -608,9 +608,9 @@ receive URL
 <summary>实现要点（工程读者展开）</summary>
 
 - **渲染路径**：`MarkdownWebPreviewView`（`UIViewRepresentable` 包 `WKWebView`）加载 app bundle 内的 `preview.html`；Swift 通过 `evaluateJavaScript` 调用 `window.renderMarkdown({markdown, theme})`，payload 经 `JSONSerialization`，不字符串拼接 markdown。
-- **JS 依赖**：`markdown-it@14.2.0` + `DOMPurify@3.4.10` 固定打进 bundle，零 CDN 调用。Xcode 同步文件夹会拍平子目录，所以 vendor 文件与 `preview.html` 同级，src 不带 `vendor/` 前缀。
+- **JS 依赖**：`markdown-it@14.2.0` + `DOMPurify@3.4.10` + `Temml@0.13.4` 固定打进 bundle，零 CDN 调用。Temml 在 markdown-it token 阶段把 `$...$` / `$$...$$` 转为 MathML，再与其余 HTML 一起进入 sanitizer。Xcode 同步文件夹会拍平子目录，所以 vendor 文件与 `preview.html` 同级，src 不带 `vendor/` 前缀。
 - **图片解析**：复用 `MarkdownImageResolver.resolveImages` 把相对图片转 `data:` URI，再交给 WebView — 与 §3.7 Markdown 图片解析契约语义一致。
-- **安全模型**：DOMPurify allowlist 禁 `script` / `iframe` / `form` / `object` / `embed` / `on*` 事件属性 / `javascript:` URL；`WKNavigationDelegate` 拦截除 file / fragment 外的所有 navigation；外链交系统 Safari，workspace 相对链接走 `state.fileToOpenInFilesTab`；`WKWebsiteDataStore` 用 non-persistent，无持久 cookie / localStorage。
+- **安全模型**：Temml 使用 `trust: false` 和有界 macro/size 配置；它生成的 MathML 不绕过 sanitizer。DOMPurify 使用显式 HTML/SVG/MathML allowlist，禁 `script` / `iframe` / `form` / `object` / `embed` / `on*` 事件属性 / `javascript:` URL；`WKNavigationDelegate` 拦截除 file / fragment 外的所有 navigation；外链交系统 Safari，workspace 相对链接走 `state.fileToOpenInFilesTab`；`WKWebsiteDataStore` 用 non-persistent，无持久 cookie / localStorage。
 - **主题适配**：shell 暴露 `--fg` / `--bg` / `--card-bg` / `--border` / `--link` / `--ok-*` / `--bad-*` / `--warn-*` / `--block-*` 等 CSS 变量，light / dark 两套定义。作者样式必须用 `var(--x, fallback)` 形式，不支持主题变量的渲染器（Cursor、GitHub）退回 fallback。Dark 模式 chip 用饱和主色（`--ok-bg=#10b981` 等），避免深底沉进卡片。chip 必须用复合选择器 `.vx-chip.ok`，裸 `.ok` 会被卡片 `color:var(--fg)` 覆盖。
 - **切换刷新**：`FileContentView` 在 `.onChange(of: filePath)` 主动 reset content + reload，避免 SwiftUI 复用 view 实例时旧文件残留。
 
