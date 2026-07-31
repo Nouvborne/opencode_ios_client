@@ -174,9 +174,10 @@ struct SettingsTabView: View {
                 Section(L10n.t(.settingsSpeechRecognition)) {
                     Picker(L10n.t(.settingsRecordingStrategy), selection: $state.aiBuilderRecordingStrategy) {
                         Text(L10n.t(.settingsOpenAIRealtime)).tag(VoiceFlowRecordingStrategy.openAIRealtime)
+                        Text(L10n.t(.settingsGPTLiveTranscribe)).tag(VoiceFlowRecordingStrategy.gptLiveTranscribe)
                         Text(L10n.t(.settingsGrokBatch)).tag(VoiceFlowRecordingStrategy.grokBatch)
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                     .accessibilityIdentifier("settings-recording-strategy")
 
                     HStack(spacing: 6) {
@@ -214,9 +215,10 @@ struct SettingsTabView: View {
                     SecureField(L10n.t(.settingsAiBuilderToken), text: $state.aiBuilderToken)
                         .textContentType(.password)
 
-                    if state.aiBuilderRecordingStrategy == .openAIRealtime {
+                    if state.aiBuilderRecordingStrategy.usesRealtimeTransport {
                         TextField(L10n.t(.settingsCustomPrompt), text: $state.aiBuilderCustomPrompt, axis: .vertical)
                             .lineLimit(3...6)
+                            .accessibilityIdentifier("settings-custom-prompt")
                     }
 
                     TextField(L10n.t(.settingsTerminology), text: $state.aiBuilderTerminology)
@@ -250,6 +252,10 @@ struct SettingsTabView: View {
                                 .foregroundStyle(.red)
                         }
                     }
+
+                    Text(L10n.t(.settingsTestConnectionScope))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Section(L10n.t(.settingsAbout)) {
                     if let version = state.serverVersion {

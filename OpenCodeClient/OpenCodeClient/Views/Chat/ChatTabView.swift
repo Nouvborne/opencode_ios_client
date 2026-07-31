@@ -63,17 +63,18 @@ struct ChatTabView: View {
     @State private var renameText = ""
     @State var microphone = VoiceFlowMicrophone()
     @State var speechSession: VoiceFlowSession?
+    @State var speechAudioSender: OrderedSpeechAudioSender?
     @State var speechStartID: UUID?
-    @State var activeSpeechStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
+    @State var speechOriginSessionID: String?
+    @State var activeSpeechStrategy: VoiceFlowRecordingStrategy = .gptLiveTranscribe
     @State var speechFinalizationID: UUID?
     @State var speechRetryID: UUID?
+    @State var speechRetrySessionID: String?
     @State var speechHeartbeatTask: Task<Void, Never>?
     @State var speechEventTask: Task<Void, Never>?
     @State var recordingInputPrefix = ""
-    @State var preservedSpeechInputPrefix = ""
-    @State var preservedSpeechAudio: VoiceFlowPreservedAudio?
-    @State var preservedSpeechFileURL: URL?
-    @State var preservedSpeechStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
+    @State var pendingSpeechAudioByOwner: [ChatSpeechOwner: PendingChatSpeechAudio] = [:]
+    @State var completedSpeechDraftByOwner: [ChatSpeechOwner: String] = [:]
     @State var isRecording = false
     @State var isStartingRecording = false
     @State var isTranscribing = false
@@ -108,7 +109,8 @@ struct ChatTabView: View {
     }
 
     private var hasPreservedSpeechAudioForUI: Bool {
-        preservedSpeechAudio != nil || preservedSpeechFileURL != nil || Self.hasUITestF3RetryFixture
+        pendingSpeechAudioByOwner[ChatSpeechOwner(sessionID: state.currentSessionID)] != nil
+            || Self.hasUITestF3RetryFixture
     }
 
     private var composerPlaceholderText: String {
@@ -850,21 +852,24 @@ struct ChatTabView: View {
             }
             .onChange(of: state.currentSessionID) { oldID, newID in
                 let draftText = inputText
+                state.setDraftText(draftText, for: oldID)
+                syncDraftFromState(sessionID: newID)
+                isNearBottom = true
+                pendingBottomVisibilityTask?.cancel()
+                pendingBottomVisibilityTask = nil
                 Task { @MainActor in
-                    await Task.yield()
-                    state.setDraftText(draftText, for: oldID)
-                    syncDraftFromState(sessionID: newID)
-                    isNearBottom = true
-                    pendingBottomVisibilityTask?.cancel()
-                    pendingBottomVisibilityTask = nil
+                    await stopSpeechForNavigation()
                 }
             }
             .onChange(of: inputText) { _, newValue in
                 guard !isSyncingDraft else { return }
+                let draftSessionID = state.currentSessionID
                 Task { @MainActor in
                     await Task.yield()
-                    guard !isSyncingDraft, inputText == newValue else { return }
-                    state.setDraftText(newValue, for: state.currentSessionID)
+                    guard !isSyncingDraft,
+                          state.currentSessionID == draftSessionID,
+                          inputText == newValue else { return }
+                    state.setDraftText(newValue, for: draftSessionID)
                 }
             }
             .onChange(of: selectedPhotoItems) { _, newItems in
@@ -882,7 +887,12 @@ struct ChatTabView: View {
 
     private func syncDraftFromState(sessionID: String?) {
         isSyncingDraft = true
-        inputText = state.draftText(for: sessionID)
+        if sessionID == nil,
+           let completedDraft = completedSpeechDraftByOwner[ChatSpeechOwner(sessionID: nil)] {
+            inputText = completedDraft
+        } else {
+            inputText = state.draftText(for: sessionID)
+        }
         isSyncingDraft = false
     }
 

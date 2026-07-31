@@ -38,6 +38,30 @@ final class OpenCodeClientUITests: XCTestCase {
     }
 
     @MainActor
+    func testSettingsShowsThreeSpeechStrategiesAndRealtimePrompt() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 8))
+        XCTAssertGreaterThan(tabBar.buttons.count, 0)
+        tabBar.buttons.element(boundBy: tabBar.buttons.count - 1).tap()
+
+        let picker = app.descendants(matching: .any)["settings-recording-strategy"]
+        for _ in 0..<5 where !picker.exists {
+            app.swipeUp()
+        }
+        XCTAssertTrue(picker.waitForExistence(timeout: 4))
+        picker.tap()
+        XCTAssertTrue(app.buttons["GPT Realtime"].exists)
+        XCTAssertTrue(app.buttons["GPT Live Transcribe"].exists)
+        XCTAssertTrue(app.buttons["Grok STT"].exists)
+
+        app.buttons["GPT Live Transcribe"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["settings-custom-prompt"].exists)
+    }
+
+    @MainActor
     func testChatComposerLongInputRemainsScrollable() throws {
         let app = XCUIApplication()
         app.launch()
