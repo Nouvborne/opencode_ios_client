@@ -66,7 +66,7 @@ struct ChatTabView: View {
     @State var speechAudioSender: OrderedSpeechAudioSender?
     @State var speechStartID: UUID?
     @State var speechOriginSessionID: String?
-    @State var activeSpeechStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
+    @State var activeSpeechStrategy: VoiceFlowRecordingStrategy = .gptLiveTranscribe
     @State var speechFinalizationID: UUID?
     @State var speechRetryID: UUID?
     @State var speechRetrySessionID: String?

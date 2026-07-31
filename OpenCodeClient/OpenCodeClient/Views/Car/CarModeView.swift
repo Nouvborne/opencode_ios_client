@@ -38,7 +38,7 @@ struct CarModeView: View {
     @State private var speechGeneration = UUID()
     @State private var recordingStartID: UUID?
     @State private var activeRecordingGeneration: UUID?
-    @State private var activeRecordingStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
+    @State private var activeRecordingStrategy: VoiceFlowRecordingStrategy = .gptLiveTranscribe
     @State private var pendingAudio: PendingCarAudio?
     @State private var failureRetry: CarFailureRetry?
     @State private var heartbeatTask: Task<Void, Never>?

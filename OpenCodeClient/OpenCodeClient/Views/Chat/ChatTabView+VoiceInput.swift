@@ -15,10 +15,8 @@ import VoiceFlowKit
 /// SwiftUI requires `@State` on the containing struct — and this
 /// extension hosts the lifecycle methods.
 ///
-/// The chat composer intentionally suppresses mid-recording
-/// `.partialTranscript` events: OpenCode's UX shows transcript text
-/// only after stop. VoiceFlow's recorder shows live partials; see
-/// `AppState+LiveSession.swift` in the VoiceFlowKit repo for that flow.
+/// GPT Live accumulated snapshots render in the composer while recording.
+/// GPT Realtime remains finalize-only.
 
 /// Thread-safe buffer for the latest partial transcript. Used to recover
 /// a salvageable string when `commitAndStop` fails after partials
@@ -82,6 +80,15 @@ extension ChatTabView {
 
     static func speechFailureInput(prefix: String, lastPartialTranscript: String) -> String {
         mergedSpeechInput(prefix: prefix, transcript: lastPartialTranscript)
+    }
+
+    static func liveSpeechInput(
+        strategy: VoiceFlowRecordingStrategy,
+        prefix: String,
+        transcript: String
+    ) -> String? {
+        guard strategy == .gptLiveTranscribe else { return nil }
+        return mergedSpeechInput(prefix: prefix, transcript: transcript)
     }
 
     static func requestMicrophonePermissionForRecording() async -> Bool {
@@ -224,12 +231,16 @@ extension ChatTabView {
                             speechRecoveryActive = false
                         }
                     }
-                case .partialTranscript:
-                    // Mid-recording partial transcripts are intentionally
-                    // suppressed in OpenCode's chat composer — the user only
-                    // sees text after stop. (See VoiceFlow's recording flow
-                    // for the opposite UX.)
-                    continue
+                case .partialTranscript(let transcript):
+                    await MainActor.run {
+                        guard isCurrentSpeechSession(session),
+                              let liveInput = Self.liveSpeechInput(
+                                  strategy: activeSpeechStrategy,
+                                  prefix: recordingInputPrefix,
+                                  transcript: transcript
+                              ) else { return }
+                        inputText = liveInput
+                    }
                 }
             }
         }

@@ -1413,7 +1413,7 @@ struct SpeechRecognitionDefaultsTests {
         UserDefaults.standard.removeObject(forKey: "aiBuilderTerminology")
     }
 
-    @Test @MainActor func recordingStrategyPersistsAndDefaultsToRealtime() async {
+    @Test @MainActor func recordingStrategyPersistsAndDefaultsToGPTLive() async {
         let oldValue = UserDefaults.standard.string(forKey: AppState.aiBuilderRecordingStrategyKey)
         UserDefaults.standard.removeObject(forKey: AppState.aiBuilderRecordingStrategyKey)
         defer {
@@ -1424,7 +1424,7 @@ struct SpeechRecognitionDefaultsTests {
             }
         }
         let defaultState = AppState()
-        #expect(defaultState.aiBuilderRecordingStrategy == .openAIRealtime)
+        #expect(defaultState.aiBuilderRecordingStrategy == .gptLiveTranscribe)
 
         for strategy in VoiceFlowRecordingStrategy.allCases {
             defaultState.aiBuilderRecordingStrategy = strategy
@@ -1450,6 +1450,19 @@ struct ChatComposerSpeechTests {
 
     @Test func mergedSpeechInputKeepsSeparatorForExistingInput() {
         #expect(ChatTabView.mergedSpeechInput(prefix: "Existing draft", transcript: "partial") == "Existing draft partial")
+    }
+
+    @Test func liveSpeechInputOnlyRendersGPTLiveSnapshots() {
+        #expect(ChatTabView.liveSpeechInput(
+            strategy: .gptLiveTranscribe,
+            prefix: "Existing draft",
+            transcript: "live words"
+        ) == "Existing draft live words")
+        #expect(ChatTabView.liveSpeechInput(
+            strategy: .openAIRealtime,
+            prefix: "Existing draft",
+            transcript: "hidden words"
+        ) == nil)
     }
 
     @Test func speechFailureInputPreservesLastPartialTranscript() {

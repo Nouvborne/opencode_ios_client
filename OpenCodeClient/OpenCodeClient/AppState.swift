@@ -228,7 +228,7 @@ final class AppState {
         _aiBuilderTerminology = UserDefaults.standard.string(forKey: Self.aiBuilderTerminologyKey) ?? Self.defaultAIBuilderTerminology
         _aiBuilderRecordingStrategy = VoiceFlowRecordingStrategy(
             rawValue: UserDefaults.standard.string(forKey: Self.aiBuilderRecordingStrategyKey) ?? ""
-        ) ?? .openAIRealtime
+        ) ?? .gptLiveTranscribe
         _selectedProjectWorktree = UserDefaults.standard.string(forKey: Self.selectedProjectWorktreeKey)
         _customProjectPath = UserDefaults.standard.string(forKey: Self.customProjectPathKey) ?? ""
         _languagePreference = L10n.languagePreference
@@ -347,7 +347,7 @@ final class AppState {
         }
     }
 
-    var _aiBuilderRecordingStrategy: VoiceFlowRecordingStrategy = .openAIRealtime
+    var _aiBuilderRecordingStrategy: VoiceFlowRecordingStrategy = .gptLiveTranscribe
     var aiBuilderRecordingStrategy: VoiceFlowRecordingStrategy {
         get { _aiBuilderRecordingStrategy }
         set {

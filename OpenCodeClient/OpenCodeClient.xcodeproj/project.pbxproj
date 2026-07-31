@@ -645,7 +645,7 @@
 			repositoryURL = "https://github.com/grapeot/voiceflow.git";
 			requirement = {
 				kind = revision;
-				revision = 2be5dfa2925c451102aa9797bd35be757c9205bf;
+				revision = 1f4859913773020504d6fe237168b32a8e4eaa5d;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
