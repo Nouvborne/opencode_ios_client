@@ -3885,6 +3885,34 @@ struct AppStateFlowTests {
         #expect(state.sessions.first?.title == "Current")
     }
 
+    @Test @MainActor func sessionUpdatedUsesServerDefaultProjectScope() async {
+        let apiClient = MockAPIClient()
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.selectedProjectWorktree = nil
+        state.serverCurrentProjectWorktree = "/project/a"
+        state.sessions = [Self.makeSession(id: "s-current", updated: 10, directory: "/project/a", title: "Current")]
+
+        await state.applySSEEventForTesting(Self.makeSSEEvent("""
+        {"payload":{"type":"session.updated","properties":{"session":{"id":"s-other","slug":"s-other","projectID":"p1","directory":"/project/b","parentID":null,"title":"Other","version":"1","time":{"created":0,"updated":20},"share":null,"summary":null}}}}
+        """))
+
+        #expect(state.sessions.map(\.id) == ["s-current"])
+    }
+
+    @Test @MainActor func sessionUpdatedDoesNotInsertUnknownProjectBeforeDefaultLoads() async {
+        let apiClient = MockAPIClient()
+        let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())
+        state.selectedProjectWorktree = nil
+        state.serverCurrentProjectWorktree = nil
+        state.sessions = [Self.makeSession(id: "s-known", updated: 10, directory: "/project/a", title: "Known")]
+
+        await state.applySSEEventForTesting(Self.makeSSEEvent("""
+        {"payload":{"type":"session.updated","properties":{"session":{"id":"s-other","slug":"s-other","projectID":"p1","directory":"/project/b","parentID":null,"title":"Other","version":"1","time":{"created":0,"updated":20},"share":null,"summary":null}}}}
+        """))
+
+        #expect(state.sessions.map(\.id) == ["s-known"])
+    }
+
     @Test @MainActor func sessionUpdatedStillAppliesToCurrentSessionAcrossProjectMismatch() async {
         let apiClient = MockAPIClient()
         let state = AppState(apiClient: apiClient, sseClient: MockSSEClient(), sshTunnelManager: SSHTunnelManager())

@@ -84,9 +84,12 @@ extension AppState {
                JSONSerialization.isValidJSONObject(infoObj),
                let data = try? JSONSerialization.data(withJSONObject: infoObj),
                let session = try? JSONDecoder().decode(Session.self, from: data) {
-                let dir = effectiveProjectDirectory
+                let dir = effectiveProjectDirectory ?? serverCurrentProjectWorktree
                 let isCurrent = (session.id == currentSessionID)
-                let matchesProject = dir == nil || session.directory == dir
+                let isKnown = sessions.contains(where: { $0.id == session.id })
+                // REST treats a missing directory as the server's current project,
+                // while /global/event carries updates from every project.
+                let matchesProject = dir.map { session.directory == $0 } ?? isKnown
                 let shouldApply = matchesProject || isCurrent
                 if shouldApply {
                     if sessions.first(where: { $0.id == session.id }) == session { return }
