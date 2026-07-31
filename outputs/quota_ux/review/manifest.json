@@ -1,0 +1,26 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "3EB51FEF-C951-4485-AD0F-33463C66DBEB",
+        "deviceName" : "iPhone 16 Pro",
+        "exportedFileName" : "185638B9-349E-4E6B-9899-C02047ADEA4E.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "quota-detail_0_B54AC8CB-D392-4B8B-BC9A-6A8A03EEB08E.png",
+        "timestamp" : 1783876101.503
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "3EB51FEF-C951-4485-AD0F-33463C66DBEB",
+        "deviceName" : "iPhone 16 Pro",
+        "exportedFileName" : "5FDA5996-CA28-4E84-8277-11921AAC8531.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "quota-toolbar_0_4A79BEF2-EF74-4CFF-86F8-F44C55923A81.png",
+        "timestamp" : 1783876098.357
+      }
+    ],
+    "testIdentifier" : "AIUsageQuotaUITests/testQuotaBadgeAndDetailFixture()",
+    "testIdentifierURL" : "test://com.apple.xcode/OpenCodeClient/OpenCodeClientUITests/AIUsageQuotaUITests/testQuotaBadgeAndDetailFixture"
+  }
+]

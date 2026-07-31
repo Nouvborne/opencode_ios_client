@@ -104,6 +104,9 @@ enum L10n {
         case settingsRecordingStrategy
         case settingsOpenAIRealtime
         case settingsGrokBatch
+        case settingsStrategyHelp
+        case settingsStrategyDialogTitle
+        case settingsStrategyDialogBody
         case settingsAiBuilderBaseURL
         case settingsAiBuilderToken
         case settingsCustomPrompt
@@ -556,8 +559,11 @@ enum L10n {
         Key.settingsTheme.rawValue: "Theme",
         Key.settingsSpeechRecognition.rawValue: "Speech Recognition",
         Key.settingsRecordingStrategy.rawValue: "Recording Strategy",
-        Key.settingsOpenAIRealtime.rawValue: "OpenAI Realtime",
-        Key.settingsGrokBatch.rawValue: "Grok Batch",
+        Key.settingsOpenAIRealtime.rawValue: "GPT Realtime",
+        Key.settingsGrokBatch.rawValue: "Grok STT",
+        Key.settingsStrategyHelp.rawValue: "Which one should I choose?",
+        Key.settingsStrategyDialogTitle.rawValue: "Which one should I choose?",
+        Key.settingsStrategyDialogBody.rawValue: "GPT Realtime — better formatting, punctuation, and accuracy. Shows a live transcript while you speak.\n\nGrok STT — about 10x cheaper, slightly lower accuracy, no live transcript. Records locally and uploads after Stop.\n\nRecommendation: For content a human will read (notes, messages, articles), prefer GPT Realtime. For content an AI agent will process (commands, prompts, logs), Grok STT is usually good enough — AI tolerates typos and messy formatting far better than people do.",
         Key.settingsAiBuilderBaseURL.rawValue: "AI Builder Base URL",
         Key.settingsAiBuilderToken.rawValue: "AI Builder Token",
         Key.settingsCustomPrompt.rawValue: "Custom Prompt",
@@ -1009,8 +1015,11 @@ enum L10n {
         Key.settingsTheme.rawValue: "主题",
         Key.settingsSpeechRecognition.rawValue: "语音识别",
         Key.settingsRecordingStrategy.rawValue: "录音策略",
-        Key.settingsOpenAIRealtime.rawValue: "OpenAI 实时",
-        Key.settingsGrokBatch.rawValue: "Grok 批量",
+        Key.settingsOpenAIRealtime.rawValue: "GPT Realtime",
+        Key.settingsGrokBatch.rawValue: "Grok STT",
+        Key.settingsStrategyHelp.rawValue: "我该选哪个？",
+        Key.settingsStrategyDialogTitle.rawValue: "我该选哪个？",
+        Key.settingsStrategyDialogBody.rawValue: "GPT Realtime——排版、标点和准确率更好，说话时能看到实时字幕。\n\nGrok STT——价格约为前者的 1/10，准确率略低，无实时字幕；本地录音，停止后上传。\n\n建议：给人看的内容（笔记、消息、文章）用 GPT Realtime；给 AI 处理的内容（指令、prompt、日志）用 Grok STT 就够——AI 对错别字和排版的包容度比人高得多。",
         Key.settingsAiBuilderBaseURL.rawValue: "AI Builder 服务地址",
         Key.settingsAiBuilderToken.rawValue: "AI Builder 访问令牌",
         Key.settingsCustomPrompt.rawValue: "自定义提示词",

@@ -1,0 +1,9 @@
+{
+  "id" : "6941b7e7-3471-42f7-a5b4-535f97c5956c",
+  "targets" : [
+    {
+      "id" : "886DB071-1616-4C3C-BB1B-3A6BE18E1A64",
+      "name" : "OpenCodeClient"
+    }
+  ]
+}
