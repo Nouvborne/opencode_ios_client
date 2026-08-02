@@ -15,10 +15,9 @@ struct ModelPreset: Codable, Identifiable {
         switch displayName {
         case "DeepSeek V4 Flash": return "DS-Flash"
         case "DeepSeek Local": return "DS-L"
-        case "DeepSeek V4 Pro": return "DS-Pro"
         case "Ollama GLM 5.2": return "OGLM-5.2"
-        case "GPT-5.6 Sol Fast": return "GPT-F"
         case "GPT-5.6 Terra Fast": return "GPT-TF"
+        case "GPT-5.6 Luna": return "GPT-L"
         case "Grok 4.5": return "Grok"
         case let name where name.contains("Gemini"): return "Gemini"
         case let name where name.contains("GPT"): return "GPT"
