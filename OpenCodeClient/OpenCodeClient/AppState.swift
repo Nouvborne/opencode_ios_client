@@ -177,6 +177,7 @@ final class AppState {
     static let currentHostProfileIDKey = "currentHostProfileID.v1"
     static let aiUsageDashboardURLKey = "aiUsageDashboardURL"
     static let carModeEnabledKey = "carModeEnabled"
+    static let autoApprovePermissionsKey = "autoApprovePermissions"
     static let languagePreferenceKey = L10n.languagePreferenceUserDefaultsKey
     static let carSessionsByContextKey = "carSessionsByContext.v1"
     static let healthExportPermissionKey = "clientCapability.healthExportAll.permission.v1"
@@ -234,6 +235,7 @@ final class AppState {
         _languagePreference = L10n.languagePreference
         _aiUsageDashboardURL = UserDefaults.standard.string(forKey: Self.aiUsageDashboardURLKey) ?? ""
         isCarModeEnabled = UserDefaults.standard.bool(forKey: Self.carModeEnabledKey)
+        autoApprovePermissions = UserDefaults.standard.bool(forKey: Self.autoApprovePermissionsKey)
         healthExportPermission = ClientCapabilityPermission(
             rawValue: UserDefaults.standard.string(forKey: Self.healthExportPermissionKey) ?? ""
         ) ?? .ask
@@ -377,6 +379,11 @@ final class AppState {
     var aiUsageQuotaError: String?
     var isCarModeEnabled = false {
         didSet { UserDefaults.standard.set(isCarModeEnabled, forKey: Self.carModeEnabledKey) }
+    }
+    /// When enabled, incoming tool permission requests are approved automatically
+    /// instead of surfacing as cards in chat.
+    var autoApprovePermissions = false {
+        didSet { UserDefaults.standard.set(autoApprovePermissions, forKey: Self.autoApprovePermissionsKey) }
     }
     var isConnected: Bool = false
     var serverVersion: String?

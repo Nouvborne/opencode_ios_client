@@ -20,7 +20,19 @@ extension AppState {
         guard isConnected else { return }
         do {
             let requests = try await apiClient.pendingPermissions()
-            pendingPermissions = PermissionController.fromPendingRequests(requests)
+            let permissions = PermissionController.fromPendingRequests(requests)
+            guard !autoApprovePermissions else {
+                for perm in permissions {
+                    try? await apiClient.respondPermission(
+                        sessionID: perm.sessionID,
+                        permissionID: perm.permissionID,
+                        response: perm.allowAlways ? .always : .once
+                    )
+                }
+                pendingPermissions = []
+                return
+            }
+            pendingPermissions = permissions
         } catch {
             // Keep the current list on errors.
         }

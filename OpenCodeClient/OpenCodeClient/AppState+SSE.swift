@@ -128,7 +128,11 @@ extension AppState {
         case "permission.asked":
             if let perm = PermissionController.parseAskedEvent(properties: props),
                !pendingPermissions.contains(where: { $0.id == perm.id }) {
-                pendingPermissions.append(perm)
+                if autoApprovePermissions {
+                    Task { await respondPermission(perm, response: perm.allowAlways ? .always : .once) }
+                } else {
+                    pendingPermissions.append(perm)
+                }
             }
         case "permission.replied":
             PermissionController.applyRepliedEvent(properties: props, to: &pendingPermissions)

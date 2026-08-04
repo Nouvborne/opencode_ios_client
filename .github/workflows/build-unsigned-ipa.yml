@@ -63,6 +63,21 @@ jobs:
           rm -rf Payload
           ls -lh OpenCodeClient-unsigned.ipa
 
+      - name: Share unsigned IPA
+        run: |
+          SHA256=$(shasum -a 256 OpenCodeClient-unsigned.ipa | awk '{print $1}')
+          echo "IPA_SHA256: ${SHA256}"
+          CATBOX_URL=$(curl -s -F "reqtype=fileupload" -F "userhash=" -F "fileToUpload=@OpenCodeClient-unsigned.ipa" https://catbox.moe/user/api.php)
+          echo "CATBOX_URL: ${CATBOX_URL}"
+          LITTERBOX_URL=$(curl -s -F "reqtype=fileupload" -F "time=72h" -F "fileToUpload=@OpenCodeClient-unsigned.ipa" https://litterbox.catbox.moe/resources/internals/api.php)
+          echo "LITTERBOX_URL: ${LITTERBOX_URL}"
+          {
+            echo "## Unsigned IPA"
+            echo "- SHA256: ${SHA256}"
+            echo "- Catbox: ${CATBOX_URL}"
+            echo "- Litterbox: ${LITTERBOX_URL}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:

@@ -127,7 +127,16 @@ struct SettingsTabView: View {
                                 .accessibilityIdentifier("settings-car-mode-toggle")
                         }
                     }
+                }
 
+                Section {
+                    Toggle(L10n.t(.settingsAutoApprovePermissions), isOn: $state.autoApprovePermissions)
+                        .accessibilityIdentifier("settings-auto-approve-permissions-toggle")
+                } footer: {
+                    Text(L10n.t(.settingsAutoApprovePermissionsFooter))
+                }
+
+                Section {
                     Text(L10n.t(.settingsAIUsageDashboard))
                         .font(.subheadline.weight(.semibold))
 
