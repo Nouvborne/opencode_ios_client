@@ -65,11 +65,28 @@ jobs:
 
       - name: Share unsigned IPA
         run: |
+          set +e
           SHA256=$(shasum -a 256 OpenCodeClient-unsigned.ipa | awk '{print $1}')
           echo "IPA_SHA256: ${SHA256}"
-          CATBOX_URL=$(curl -s -F "reqtype=fileupload" -F "userhash=" -F "fileToUpload=@OpenCodeClient-unsigned.ipa" https://catbox.moe/user/api.php)
+          CATBOX_URL=""
+          for i in 1 2 3; do
+            CATBOX_URL=$(curl -s -F "reqtype=fileupload" -F "fileToUpload=@OpenCodeClient-unsigned.ipa" https://catbox.moe/user/api.php)
+            if [[ "$CATBOX_URL" == http* ]]; then
+              break
+            fi
+            echo "catbox attempt $i failed: ${CATBOX_URL}"
+            sleep 10
+          done
           echo "CATBOX_URL: ${CATBOX_URL}"
-          LITTERBOX_URL=$(curl -s -F "reqtype=fileupload" -F "time=72h" -F "fileToUpload=@OpenCodeClient-unsigned.ipa" https://litterbox.catbox.moe/resources/internals/api.php)
+          LITTERBOX_URL=""
+          for i in 1 2 3; do
+            LITTERBOX_URL=$(curl -s -F "reqtype=fileupload" -F "time=72h" -F "fileToUpload=@OpenCodeClient-unsigned.ipa" https://litterbox.catbox.moe/resources/internals/api.php)
+            if [[ "$LITTERBOX_URL" == https://litter.catbox.moe/* ]]; then
+              break
+            fi
+            echo "litterbox attempt $i failed: ${LITTERBOX_URL}"
+            sleep 10
+          done
           echo "LITTERBOX_URL: ${LITTERBOX_URL}"
           {
             echo "## Unsigned IPA"
@@ -77,6 +94,9 @@ jobs:
             echo "- Catbox: ${CATBOX_URL}"
             echo "- Litterbox: ${LITTERBOX_URL}"
           } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$CATBOX_URL" != http* && "$LITTERBOX_URL" != https://litter.catbox.moe/* ]]; then
+            echo "Both file hosting uploads failed; IPA is available as a GitHub Actions artifact."
+          fi
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
